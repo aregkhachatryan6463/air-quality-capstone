@@ -1,0 +1,18 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.swp
+*.swo
+.DS_Store
+.ipynb_checkpoints/
+.env
+venv/
+.venv/
+env/
+.idea/
+.vscode/
+
+# Large data folder (exceeds GitHub file size limits; see DATA_README.md)
+Air Quality Data/
+
