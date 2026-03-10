@@ -1,36 +1,36 @@
 # Short-Term PM2.5 Forecasting in Yerevan
 
-This repository contains the code and notebooks for the capstone project:
+Capstone project:
 
-> **Short-Term PM2.5 Forecasting in Yerevan: A Comparative Study of Statistical and Machine Learning Models**  
-> Author: **Areg Khachatryan**  
-> Supervisor: **Rafayel Shirakyan**
+**Short-Term PM2.5 Forecasting in Yerevan: A Comparative Study of Statistical and Machine Learning Models**  
+Areg Khachatryan · Rafayel Shirakyan (Supervisor)
 
-## Contents
+## Repository contents
 
-- `yerevan_pm25_data_overview.py` – data overview script (run with `python yerevan_pm25_data_overview.py`); loads city-level hourly data for Yerevan, explores coverage/missingness, and visualizes PM2.5.
-- `download_data.py` – downloads the Air Quality Data zip from Google Drive into the project (run once after setting the link in the script; see [DATA_README.md](DATA_README.md)).
-- `Yerevan_PM25_Data_Overview.ipynb` – same content as the overview script, in notebook form.
-- `Areg Khachatryan Capstone Dataset Prep.ipynb` – earlier exploratory notebook for building a Yerevan dataset and trying initial models.
-- **Data** – The large `Air Quality Data/` folder is **not** in the repo (GitHub size limits). It is hosted on **Google Drive**. See **[DATA_README.md](DATA_README.md)** for how to get the data (download script or manual), or use the official [airquality.am](https://airquality.am/en/air-quality/open-data) source.
+- **`yerevan_pm25_data_overview.py`** — Loads city-level hourly data for Yerevan, summarizes coverage and missingness, and produces PM2.5 visualizations. Run: `python yerevan_pm25_data_overview.py`
+- **`download_data.py`** — Downloads the Air Quality Data zip from Google Drive and extracts it into the project. Run once: `python download_data.py`
+- **`Yerevan_PM25_Data_Overview.ipynb`** — Notebook version of the data overview.
+- **`Areg Khachatryan Capstone Dataset Prep.ipynb`** — Exploratory work: Yerevan dataset construction and initial models.
 
-## Running the project (e.g. for your supervisor)
+Data are not in the repo; see **[DATA_README.md](DATA_README.md)** for how to obtain them (script or manual download from Google Drive).
 
-1. Clone the repo and install dependencies: `pip install -r requirements.txt`
-2. Download the data: run `python download_data.py` (after the project author has set the Google Drive link in that script), or follow the manual steps in [DATA_README.md](DATA_README.md).
-3. Run the overview script: `python yerevan_pm25_data_overview.py`
+## How to run
+
+1. Clone the repository and go to the project directory.
+2. `pip install -r requirements.txt`
+3. `python download_data.py`  (downloads and extracts the data)
+4. `python yerevan_pm25_data_overview.py`
 
 ## Data source
 
-All measurement data comes from the open data portal of **airquality.am**. The full dataset is hosted on **Google Drive** for this repo; download instructions and folder layout are in **[DATA_README.md](DATA_README.md)**. Schema and license are in the data README/LICENSE once you have the folder.
+Measurements come from [airquality.am](https://airquality.am/en/air-quality/open-data). The dataset used in this repo is distributed via Google Drive; see [DATA_README.md](DATA_README.md) for the link and folder layout.
 
-## Goal (high level)
+## Project aim
 
-The project aims to build and compare short-term (1–4 hour ahead) PM2.5 forecasting models for **Yerevan**, using:
+Compare short-term (1–4 hour ahead) PM2.5 forecasting approaches for Yerevan:
 
-- Simple baselines (persistence, moving averages)
-- Classical regression / time-series models
-- Machine learning models (e.g., tree ensembles)
+- Baselines (e.g. persistence, moving averages)
+- Classical regression and time-series models
+- Machine learning (e.g. tree ensembles)
 
-with a focus on **methodological clarity, interpretability, and reproducibility**, rather than very complex deep learning architectures.
-
+Emphasis on clarity, interpretability, and reproducibility.

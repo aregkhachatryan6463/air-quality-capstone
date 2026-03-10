@@ -22,7 +22,6 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-# Plot style (simple, no seaborn dependency)
 plt.style.use("ggplot")
 
 # Base path for the data (relative to project folder)
@@ -134,26 +133,11 @@ print(
 )
 
 # ---------------------------------------------------------------------------
-# Data risks and what we can do (summary)
+# Data quality summary (for preprocessing and modeling)
 # ---------------------------------------------------------------------------
 print("""
-## Data risks and what we can do
-
-From the summaries and plots above, we will focus on:
-
-- **Missing timestamps**: quantify how many hours are missing and whether they
-  appear in long gaps or isolated points. For forecasting, we may drop short
-  isolated gaps or fill limited gaps with interpolation if justified.
-
-- **Missing values in features** (pollutants and meteorology): identify
-  variables with high missingness and decide whether to exclude them or
-  impute using simple, transparent methods (e.g., forward-fill, rolling median).
-
-- **Extreme outliers in PM2.5**: use domain knowledge and diagnostics to
-  decide whether to cap extreme values at a reasonable maximum or keep them
-  but use robust models/metrics.
-
-These decisions will directly shape the preprocessing and baseline models
-in the next step (persistence baselines, simple regression with lags).
-The goal is to keep these steps transparent and reproducible for the report.
+Data quality notes:
+- Missing timestamps: treat via interpolation or dropping short gaps as appropriate.
+- Missing values in pollutants/meteorology: exclude or impute (e.g. forward-fill, rolling median).
+- Extreme PM2.5 values: consider capping or robust metrics in modeling.
 """)
