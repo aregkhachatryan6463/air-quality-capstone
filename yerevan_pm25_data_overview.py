@@ -140,4 +140,7 @@ Data quality notes:
 - Missing timestamps: treat via interpolation or dropping short gaps as appropriate.
 - Missing values in pollutants/meteorology: exclude or impute (e.g. forward-fill, rolling median).
 - Extreme PM2.5 values: consider capping or robust metrics in modeling.
+
+For the full forecasting pipeline (preprocessing, baselines, models, evaluation), run:
+  python yerevan_pm25_forecasting.py
 """)
