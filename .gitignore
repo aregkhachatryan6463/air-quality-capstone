@@ -16,3 +16,6 @@ env/
 # Large data folder (exceeds GitHub file size limits; see DATA_README.md)
 Air Quality Data/
 
+# Local prediction archive (regenerate with: python yerevan_pm25_forecasting.py --paper)
+paper/bundle/
+

@@ -1,0 +1,20 @@
+\begin{table}[t]
+\centering
+\small
+\caption{Test MAE by forecast horizon (hours).}
+\label{tab:mae_horizon}
+\begin{tabular}{lrrrr}
+\toprule
+Model & h=1 & h=2 & h=3 & h=4 \\
+\midrule
+AR(24)\_frozen & 2.375 & nan & nan & nan \\
+MLP & 5.627 & 5.453 & 6.175 & 6.867 \\
+Persistence & 2.738 & 4.761 & 6.281 & 7.469 \\
+RandomForest & 5.265 & 5.970 & 6.335 & 6.621 \\
+Ridge & 5.096 & 6.352 & 7.396 & 8.277 \\
+Rolling\_mean\_24h & 7.225 & nan & nan & nan \\
+Seasonal\_naive\_24h & 9.168 & 9.168 & 9.168 & 9.168 \\
+XGBoost & 5.021 & 5.550 & 6.022 & 6.545 \\
+\bottomrule
+\end{tabular}
+\end{table}
