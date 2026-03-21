@@ -1,0 +1,66 @@
+{
+  "generated_utc": "2026-03-21T13:45:23.698105+00:00",
+  "best_mae_model_1h": "AR(24)_frozen",
+  "best_mae_value_1h": 2.374966571663443,
+  "n_models_1h": 9,
+  "horizon_models": [
+    "AR(24)_frozen",
+    "MLP",
+    "Persistence",
+    "RandomForest",
+    "Ridge",
+    "Rolling_mean_24h",
+    "Seasonal_naive_24h",
+    "XGBoost"
+  ],
+  "bootstrap_mae_95ci": [
+    {
+      "model": "AR",
+      "mae": 2.374966571663443,
+      "ci_low": 2.3064702010333464,
+      "ci_high": 2.448398984063437
+    },
+    {
+      "model": "MLP",
+      "mae": 5.627489036709314,
+      "ci_low": 5.519442890579023,
+      "ci_high": 5.739834251765133
+    },
+    {
+      "model": "Persistence",
+      "mae": 2.7383035112512233,
+      "ci_low": 2.65343092183933,
+      "ci_high": 2.823983231873029
+    },
+    {
+      "model": "RandomForest",
+      "mae": 5.264927890531199,
+      "ci_low": 5.161703041017245,
+      "ci_high": 5.379095258535689
+    },
+    {
+      "model": "Ridge",
+      "mae": 5.096031942468899,
+      "ci_low": 4.974308673190332,
+      "ci_high": 5.214050583057685
+    },
+    {
+      "model": "Rolling_mean",
+      "mae": 7.224792377794687,
+      "ci_low": 7.003546020174293,
+      "ci_high": 7.438296911688769
+    },
+    {
+      "model": "Seasonal_naive",
+      "mae": 9.168053918904228,
+      "ci_low": 8.883357258941189,
+      "ci_high": 9.45122957658441
+    },
+    {
+      "model": "XGBoost",
+      "mae": 5.020782284601756,
+      "ci_low": 4.915548999095488,
+      "ci_high": 5.134244367885729
+    }
+  ]
+}
