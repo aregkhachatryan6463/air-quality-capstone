@@ -1,6 +1,6 @@
 """
 Yerevan hourly PM2.5: preprocessing, features, train/val/test evaluation,
-baselines, AR, linear and tree models, MLP, optional XGBoost,
+baselines, AR, linear and tree models, MLP, XGBoost,
 multi-horizon metrics, Diebold–Mariano output, and plots.
 
 run_pipeline() supports sensitivity options (capping, lag sets).
@@ -8,6 +8,7 @@ run_pipeline() supports sensitivity options (capping, lag sets).
 
 from __future__ import annotations
 
+import json
 import os
 import glob
 import warnings
@@ -25,6 +26,7 @@ from sklearn.neural_network import MLPRegressor
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import Pipeline
+from xgboost import XGBRegressor
 
 warnings.filterwarnings("ignore", category=FutureWarning)
 plt.style.use("ggplot")
@@ -221,6 +223,95 @@ def _ar_frozen_onestep_series(y: np.ndarray, train_end: int, ar_lags: int) -> np
     return out
 
 
+def _sarima_orders_from_train(
+    y_train: np.ndarray,
+    seasonal_m: int = 24,
+) -> Tuple[Tuple[int, int, int], Tuple[int, int, int, int]]:
+    """
+    Choose SARIMA orders from training data only (pmdarima stepwise search).
+    Uses a tail window if the series is very long, to keep search tractable.
+    """
+    try:
+        import pmdarima as pm
+    except ImportError as e:
+        raise ImportError(
+            "pmdarima is required for SARIMA benchmarks. Install with: pip install pmdarima"
+        ) from e
+
+    yt = np.asarray(y_train, dtype=float)
+    yt = yt[np.isfinite(yt)]
+    if len(yt) < 200:
+        return (1, 0, 1), (1, 0, 1, seasonal_m)
+    if len(yt) > 12_000:
+        yt = yt[-12_000:]
+    try:
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            model = pm.auto_arima(
+                yt,
+                seasonal=True,
+                m=seasonal_m,
+                stepwise=True,
+                suppress_warnings=True,
+                error_action="ignore",
+                max_p=3,
+                max_q=3,
+                max_P=2,
+                max_Q=2,
+                max_order=12,
+                d=None,
+                D=None,
+                information_criterion="aic",
+                approximation=True,
+                n_jobs=1,
+            )
+        order = tuple(int(x) for x in model.order)
+        seasonal_order = tuple(int(x) for x in model.seasonal_order)
+        return order, seasonal_order
+    except Exception:
+        return (1, 0, 1), (1, 0, 1, seasonal_m)
+
+
+def _sarima_rolling_one_step_preds(
+    y_concurrent: np.ndarray,
+    train_end: int,
+    order: Tuple[int, int, int],
+    seasonal_order: Tuple[int, int, int, int],
+) -> np.ndarray:
+    """
+    Rolling one-step forecasts aligned with ML ``target_1h`` at each row:
+    ``pred[k]`` estimates the value one hour ahead (same as ``target_1h[k]``),
+    using only observations up to time ``k`` (via expanding SARIMAX filter).
+    """
+    from statsmodels.tsa.statespace.sarimax import SARIMAX
+
+    y = np.asarray(y_concurrent, dtype=float)
+    n = len(y)
+    pred = np.full(n, np.nan)
+    train_y = y[:train_end]
+    if len(train_y) < 50:
+        return pred
+
+    mod = SARIMAX(
+        train_y,
+        order=order,
+        seasonal_order=seasonal_order,
+        trend="c",
+        enforce_stationarity=False,
+        enforce_invertibility=False,
+    )
+    res_t = mod.fit(disp=False)
+    for t in range(train_end, n):
+        fc = res_t.get_forecast(steps=1)
+        pm = fc.predicted_mean
+        pred[t - 1] = float(np.asarray(pm).ravel()[0])
+        res_t = res_t.append([y[t]])
+    fc_last = res_t.get_forecast(steps=1)
+    pm_last = fc_last.predicted_mean
+    pred[n - 1] = float(np.asarray(pm_last).ravel()[0])
+    return pred
+
+
 # ---------------------------------------------------------------------------
 # Data building
 # ---------------------------------------------------------------------------
@@ -362,9 +453,44 @@ def run_pipeline(
     val = df_clean.iloc[train_end:val_end]
     test = df_clean.iloc[val_end:]
 
+    split_info = {
+        "train": {
+            "timestamp_min": train["timestamp"].min().isoformat(),
+            "timestamp_max": train["timestamp"].max().isoformat(),
+            "n_rows": int(len(train)),
+        },
+        "val": {
+            "timestamp_min": val["timestamp"].min().isoformat(),
+            "timestamp_max": val["timestamp"].max().isoformat(),
+            "n_rows": int(len(val)),
+        },
+        "test": {
+            "timestamp_min": test["timestamp"].min().isoformat(),
+            "timestamp_max": test["timestamp"].max().isoformat(),
+            "n_rows": int(len(test)),
+        },
+        "split_fractions": {"train_end": train_end, "val_end": val_end, "n_total": n},
+    }
+    split_path = os.path.join(output_dir, "split_info.json")
+    with open(split_path, "w", encoding="utf-8") as f:
+        json.dump(split_info, f, indent=2)
+
     if verbose:
         print("1. Data loaded and prepared")
         print(f"   Rows: {n}, train/val/test: {len(train)}/{len(val)}/{len(test)}")
+        print(
+            f"   Train: {train['timestamp'].min()} to {train['timestamp'].max()} "
+            f"({len(train)} rows)"
+        )
+        print(
+            f"   Val:   {val['timestamp'].min()} to {val['timestamp'].max()} "
+            f"({len(val)} rows)"
+        )
+        print(
+            f"   Test:  {test['timestamp'].min()} to {test['timestamp'].max()} "
+            f"({len(test)} rows)"
+        )
+        print(f"   Saved split summary: {split_path}")
         print(
             f"   Preprocess: cap_extreme={cap_extreme}, lags={list(lag_hours)}, "
             f"IQR-flagged hours ~{prep_meta['n_outliers_flagged']}"
@@ -416,6 +542,40 @@ def run_pipeline(
         ar_test = np.full(len(test), np.nan)
         has_ar = False
 
+    # --- SARIMA / SARIMAX: univariate rolling one-step (orders from train only) ---
+    y_conc = df_clean[target_col].values.astype(float)
+    sarima_pred_all = np.full(n, np.nan)
+    sarima_orders: Tuple[Tuple[int, int, int], Tuple[int, int, int, int]] = (
+        (1, 0, 1),
+        (1, 0, 1, ar_lags),
+    )
+    has_sarima = False
+    skip_sarima = os.environ.get("PM25_SKIP_SARIMA", "").lower() in ("1", "true", "yes")
+    if skip_sarima:
+        if verbose:
+            print(
+                "   SARIMA: skipped (PM25_SKIP_SARIMA=1). Omit for fast dev runs; "
+                "remove for publication results."
+            )
+    else:
+        try:
+            sarima_orders = _sarima_orders_from_train(y_conc[:train_end], seasonal_m=ar_lags)
+            sarima_pred_all = _sarima_rolling_one_step_preds(
+                y_conc, train_end, sarima_orders[0], sarima_orders[1]
+            )
+            has_sarima = bool(np.isfinite(sarima_pred_all[val_end:n]).any())
+        except Exception as ex:
+            if verbose:
+                print(f"   SARIMA order search failed ({ex}); fallback (1,0,1)(1,0,1,{ar_lags})")
+            sarima_orders = ((1, 0, 1), (1, 0, 1, ar_lags))
+            sarima_pred_all = _sarima_rolling_one_step_preds(
+                y_conc, train_end, sarima_orders[0], sarima_orders[1]
+            )
+            has_sarima = bool(np.isfinite(sarima_pred_all[val_end:n]).any())
+
+    sarima_val = sarima_pred_all[train_end:val_end]
+    sarima_test = sarima_pred_all[val_end:n]
+
     # --- Sklearn models ---
     lr = LinearRegression()
     lr.fit(X_train, y_train)
@@ -452,24 +612,17 @@ def run_pipeline(
     y_pred_mlp_val = mlp.predict(X_val)
     y_pred_mlp_test = mlp.predict(X_test)
 
-    has_xgb = False
-    y_pred_xgb_val = y_pred_xgb_test = None
-    try:
-        from xgboost import XGBRegressor
-
-        xgb = XGBRegressor(
-            n_estimators=100,
-            max_depth=6,
-            learning_rate=0.1,
-            random_state=42,
-            n_jobs=-1,
-        )
-        xgb.fit(X_train, y_train)
-        y_pred_xgb_val = xgb.predict(X_val)
-        y_pred_xgb_test = xgb.predict(X_test)
-        has_xgb = True
-    except ImportError:
-        pass
+    xgb = XGBRegressor(
+        n_estimators=100,
+        max_depth=6,
+        learning_rate=0.1,
+        random_state=42,
+        n_jobs=-1,
+    )
+    xgb.fit(X_train, y_train)
+    y_pred_xgb_val = xgb.predict(X_val)
+    y_pred_xgb_test = xgb.predict(X_test)
+    has_xgb = True
 
     if verbose:
         print("\n2. Models (1h-ahead), validation / test")
@@ -491,6 +644,19 @@ def run_pipeline(
             _print_metrics(
                 f"AR({ar_lags}) frozen test",
                 eval_metrics(y_test_arr[mask_t], ar_test[mask_t]),
+                verbose,
+            )
+        if has_sarima:
+            mv = np.isfinite(sarima_val)
+            mt = np.isfinite(sarima_test)
+            _print_metrics(
+                f"SARIMA{sarima_orders[0]}{sarima_orders[1]} val",
+                eval_metrics(y_val_arr[mv], sarima_val[mv]),
+                verbose,
+            )
+            _print_metrics(
+                f"SARIMA{sarima_orders[0]}{sarima_orders[1]} test",
+                eval_metrics(y_test_arr[mt], sarima_test[mt]),
                 verbose,
             )
         print("\n   Regression / ML")
@@ -519,6 +685,11 @@ def run_pipeline(
     if has_ar:
         mt = np.isfinite(ar_test)
         results_rows.append(_mrow(f"AR({ar_lags})_frozen", y_test_arr[mt], ar_test[mt]))
+    if has_sarima:
+        mt = np.isfinite(sarima_test)
+        results_rows.append(
+            _mrow("SARIMA_auto", y_test_arr[mt], sarima_test[mt])
+        )
     results_rows.extend(
         [
             _mrow("LinearRegression", y_test_arr, y_pred_lr_test),
@@ -562,6 +733,19 @@ def run_pipeline(
                 ),
             }
         )
+    if has_sarima:
+        mt = np.isfinite(sarima_test)
+        dm_rows.append(
+            {
+                "comparison": f"{best_tree_name}_vs_SARIMA_MAEloss",
+                **diebold_mariano(
+                    y_test_arr[mt],
+                    sarima_test[mt],
+                    best_tree_pred[mt],
+                    loss="absolute",
+                ),
+            }
+        )
     dm_df = pd.DataFrame(dm_rows)
     dm_path = os.path.join(output_dir, "diebold_mariano_test.csv")
     dm_df.to_csv(dm_path, index=False)
@@ -573,6 +757,11 @@ def run_pipeline(
     horizon_records: List[Dict[str, Any]] = []
 
     def eval_horizon_block(h: int) -> None:
+        """
+        Direct multi-step forecasting: for horizon h, train each model to predict ``target_{h}h``
+        (h hours ahead) from features at the forecast origin — separate estimators per h, not
+        chained recursive one-step (see Marcellino, Stock & Watson 2006 on direct vs iterated).
+        """
         target_h = f"target_{h}h"
         tr = df_clean.iloc[:train_end].dropna(subset=feature_cols + [target_h])
         te = df_clean.iloc[val_end:].dropna(subset=feature_cols + [target_h])
@@ -601,6 +790,10 @@ def run_pipeline(
             add_row("Rolling_mean_24h", roll)
         if h == 1 and ar_series is not None:
             add_row(f"AR({ar_lags})_frozen", ar_h)
+        if h == 1 and has_sarima:
+            idx_te = te.index.to_numpy()
+            sar_h = sarima_pred_all[idx_te]
+            add_row("SARIMA_auto", sar_h)
 
         r_h = Ridge(alpha=1.0, solver="lsqr", random_state=42)
         r_h.fit(X_tr, y_tr)
@@ -632,8 +825,6 @@ def run_pipeline(
         add_row("MLP", mlp_h.predict(X_te))
 
         if has_xgb:
-            from xgboost import XGBRegressor
-
             x_h = XGBRegressor(
                 n_estimators=100,
                 max_depth=6,
@@ -661,6 +852,7 @@ def run_pipeline(
         "Seasonal_naive": y_pred_sn_test,
         "Rolling_mean": y_pred_roll_test,
         "AR": ar_test,
+        "SARIMA_auto": sarima_test if has_sarima else None,
         "Ridge": y_pred_ridge_test,
         "RandomForest": y_pred_rf_test,
         "MLP": y_pred_mlp_test,
@@ -719,7 +911,9 @@ def run_pipeline(
         "feature_cols": feature_cols,
         "prep_meta": prep_meta,
         "split": {"train_end": train_end, "val_end": val_end, "n": n},
+        "split_info": split_info,
         "timestamps_test": test["timestamp"].values,
+        "sarima_orders": sarima_orders if has_sarima else None,
     }
 
 
@@ -747,9 +941,9 @@ def main() -> None:
         output_dir=root,
     )
     print("\nDone.")
+    print("LaTeX tables & bootstrap CIs: python export_paper_assets.py")
     if args.paper:
         print("Paper assets: paper/figures/, paper/bundle/test_1h_predictions.npz")
-        print("Next: python export_paper_assets.py")
     return out
 
 
