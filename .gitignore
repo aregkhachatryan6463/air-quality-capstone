@@ -19,3 +19,14 @@ Air Quality Data/
 # Local prediction archive (regenerate with: python yerevan_pm25_forecasting.py --paper)
 paper/bundle/
 
+# Supervisor review (keep local only)
+docs/CAPSTONE_SUPERVISOR_FEEDBACK.md.pdf
+
+# LaTeX build artifacts (manuscript/)
+manuscript/*.aux
+manuscript/*.log
+manuscript/*.out
+manuscript/*.blg
+manuscript/*.bbl
+manuscript/*.synctex.gz
+

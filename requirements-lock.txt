@@ -1,0 +1,18 @@
+# Pinned dependency snapshot for reproducibility (core packages only).
+# Prefer regenerating from a clean virtual environment after `pip install -r requirements.txt`:
+#   python -m venv .venv
+#   .venv\Scripts\activate   # Windows
+#   pip install -r requirements.txt
+#   pip freeze > requirements-lock.txt
+#
+# Dev reference: Python 3.9.13, Windows (Anaconda base used to resolve these pins).
+
+gdown==4.6.0
+matplotlib==3.9.4
+numpy==1.26.4
+pandas==2.2.2
+pmdarima==2.0.4
+scikit-learn==1.0.2
+seaborn==0.13.2
+statsmodels==0.13.2
+xgboost==2.1.4
