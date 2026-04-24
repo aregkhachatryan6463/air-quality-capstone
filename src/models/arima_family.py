@@ -25,6 +25,44 @@ def frozen_ar_one_step(y: np.ndarray, train_end: int, lags: int = 24) -> np.ndar
     return out
 
 
+def frozen_ar_h_step_from_origins(
+    y: np.ndarray,
+    train_end: int,
+    origins: np.ndarray,
+    *,
+    h: int,
+    lags: int = 24,
+) -> np.ndarray:
+    """
+    h-step recursive forecast from specified origin indices using frozen AR coefficients.
+    Each origin t predicts y[t + h] without using observations beyond t.
+    """
+    from statsmodels.tsa.ar_model import AutoReg
+
+    y = np.asarray(y, dtype=float)
+    origins = np.asarray(origins, dtype=int)
+    out = np.full(len(origins), np.nan, dtype=float)
+    train = y[:train_end]
+    if len(train) <= lags + 2 or h < 1:
+        return out
+    res = AutoReg(train, lags=lags, trend="c", old_names=False).fit()
+    params = np.asarray(res.params, dtype=float)
+    const, coefs = float(params[0]), np.asarray(params[1:], dtype=float)
+
+    for i, t in enumerate(origins):
+        if t < lags - 1:
+            continue
+        state = list(np.asarray(y[t - lags + 1 : t + 1], dtype=float))
+        if len(state) != lags or not np.isfinite(state).all():
+            continue
+        for _ in range(h):
+            pred = const + float(sum(coefs[j] * state[-(j + 1)] for j in range(lags)))
+            state.append(pred)
+            state.pop(0)
+        out[i] = state[-1]
+    return out
+
+
 def sarima_order_search(y_train: np.ndarray, seasonal_m: int = 24) -> tuple[tuple[int, int, int], tuple[int, int, int, int]]:
     import pmdarima as pm
 

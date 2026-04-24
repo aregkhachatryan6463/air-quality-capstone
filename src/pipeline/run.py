@@ -15,7 +15,12 @@ from src.evaluation.metrics import regression_metrics
 from src.evaluation.stats_tests import bootstrap_mae_ci, diebold_mariano
 from src.evaluation.validation import chronological_split, walk_forward_slices
 from src.features.build_features import build_feature_table
-from src.models.arima_family import frozen_ar_one_step, sarima_order_search, sarima_rolling_one_step
+from src.models.arima_family import (
+    frozen_ar_h_step_from_origins,
+    frozen_ar_one_step,
+    sarima_order_search,
+    sarima_rolling_one_step,
+)
 from src.models.clustering import build_district_mapping
 from src.models.deepar_model import train_predict_deepar
 from src.models.tree_models import build_baseline_models, tune_hyperopt
@@ -37,39 +42,161 @@ def _save_summary(path: Path, payload: dict[str, Any]) -> None:
         json.dump(payload, f, indent=2, default=str)
 
 
+def _model_palette(models: list[str]) -> dict[str, str]:
+    base = {
+        "Persistence": "#1F77B4",
+        "Seasonal_naive_24h": "#FF7F0E",
+        "AR(24)_frozen": "#2CA02C",
+        "SARIMA_auto": "#D62728",
+        "Ridge": "#9467BD",
+        "RandomForest": "#8C564B",
+        "XGBoost": "#E377C2",
+        "LightGBM": "#17BECF",
+        "DeepAR": "#7F7F7F",
+    }
+    return {m: base.get(m, "#4C4C4C") for m in models}
+
+
+def _save_figure(fig: plt.Figure, out_path: Path, *, mirror_path: Path | None = None) -> None:
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(out_path, dpi=220, bbox_inches="tight")
+    if mirror_path is not None:
+        mirror_path.parent.mkdir(parents=True, exist_ok=True)
+        fig.savefig(mirror_path, dpi=220, bbox_inches="tight")
+    plt.close(fig)
+
+
 def _plot_mae_by_horizon(df: pd.DataFrame, out_path: Path) -> None:
     if df.empty:
         return
-    palette = {
-        "Persistence": "#4C78A8",
-        "Seasonal_naive_24h": "#F58518",
-        "AR(24)_frozen": "#54A24B",
-        "SARIMA_auto": "#E45756",
-        "Ridge": "#72B7B2",
-        "RandomForest": "#B279A2",
-        "XGBoost": "#FF9DA6",
-        "LightGBM": "#9D755D",
-    }
-    plt.figure(figsize=(8.5, 5.0), dpi=200)
-    for model in sorted(df["model"].unique()):
-        sub = df[df["model"] == model]
-        plt.plot(
+    agg = df.groupby("model", as_index=False)["MAE"].mean().sort_values("MAE")
+    top_models = agg["model"].head(6).tolist()
+    base_models = [m for m in ("Persistence", "Seasonal_naive_24h") if m in df["model"].unique()]
+    show_models = list(dict.fromkeys(base_models + top_models))
+    sub_df = df[df["model"].isin(show_models)].copy()
+    palette = _model_palette(show_models)
+
+    fig, ax = plt.subplots(figsize=(9.2, 5.2))
+    for model in show_models:
+        sub = sub_df[sub_df["model"] == model].sort_values("horizon_h")
+        if sub.empty:
+            continue
+        lw = 2.6 if model in top_models[:3] else 1.8
+        alpha = 1.0 if model in top_models[:3] else 0.9
+        ax.plot(
             sub["horizon_h"],
             sub["MAE"],
             marker="o",
-            linewidth=2.0,
+            linewidth=lw,
             markersize=5,
             label=model,
             color=palette.get(model),
+            alpha=alpha,
         )
-    plt.xlabel("Forecast horizon (hours)")
-    plt.ylabel("MAE")
-    plt.title("Model MAE by Forecast Horizon")
-    plt.grid(alpha=0.3)
-    plt.legend(loc="best", fontsize=8, framealpha=0.9)
-    plt.tight_layout()
-    plt.savefig(out_path)
-    plt.close()
+    ax.set_xlabel("Forecast horizon (hours)")
+    ax.set_ylabel("MAE (lower is better)")
+    ax.set_title("PM2.5 Forecast Error by Horizon (Top Models + Baselines)")
+    ax.grid(alpha=0.25, linestyle="--")
+    ax.set_xticks(sorted(sub_df["horizon_h"].unique()))
+    ax.legend(loc="upper left", ncol=2, fontsize=8, framealpha=0.95)
+    fig.tight_layout()
+    _save_figure(fig, out_path)
+
+
+def _plot_model_performance_1h(
+    results_1h: pd.DataFrame,
+    bootstrap: dict[str, dict[str, float]],
+    out_path: Path,
+) -> None:
+    if results_1h.empty:
+        return
+    df = results_1h.copy().sort_values("MAE", ascending=True)
+    models = df["Model"].tolist()
+    mae = df["MAE"].to_numpy(dtype=float)
+    ci_low = np.array([bootstrap.get(m, {}).get("ci_low", np.nan) for m in models], dtype=float)
+    ci_high = np.array([bootstrap.get(m, {}).get("ci_high", np.nan) for m in models], dtype=float)
+    xerr = np.vstack([mae - ci_low, ci_high - mae])
+
+    fig, ax = plt.subplots(figsize=(9.5, 5.3))
+    colors = [_model_palette(models)[m] for m in models]
+    ypos = np.arange(len(models))
+    ax.barh(ypos, mae, color=colors, alpha=0.85)
+    finite_mask = np.isfinite(xerr).all(axis=0)
+    ax.errorbar(
+        mae[finite_mask],
+        ypos[finite_mask],
+        xerr=xerr[:, finite_mask],
+        fmt="none",
+        ecolor="#222222",
+        elinewidth=1.2,
+        capsize=3,
+    )
+    ax.set_yticks(ypos)
+    ax.set_yticklabels(models)
+    ax.invert_yaxis()
+    ax.set_xlabel("MAE (1-hour horizon)")
+    ax.set_title("1-Hour Model Performance with 95% Bootstrap CI")
+    ax.grid(axis="x", alpha=0.25, linestyle="--")
+    fig.tight_layout()
+    _save_figure(fig, out_path)
+
+
+def _plot_walk_forward_stability(wf_df: pd.DataFrame, out_path: Path) -> None:
+    if wf_df.empty:
+        return
+    models = wf_df.groupby("model")["MAE"].mean().sort_values().index.tolist()
+    palette = _model_palette(models)
+    data = [wf_df.loc[wf_df["model"] == m, "MAE"].to_numpy(dtype=float) for m in models]
+    fig, ax = plt.subplots(figsize=(9.6, 5.1))
+    bp = ax.boxplot(data, patch_artist=True, labels=models, showfliers=True)
+    for patch, m in zip(bp["boxes"], models):
+        patch.set_facecolor(palette[m])
+        patch.set_alpha(0.35)
+        patch.set_linewidth(1.1)
+    for med in bp["medians"]:
+        med.set_color("#111111")
+        med.set_linewidth(1.4)
+    ax.set_ylabel("MAE across walk-forward folds")
+    ax.set_title("Walk-Forward Stability of Model Error")
+    ax.grid(axis="y", alpha=0.25, linestyle="--")
+    ax.tick_params(axis="x", labelrotation=20)
+    fig.tight_layout()
+    _save_figure(fig, out_path)
+
+
+def _plot_forecast_vs_actual(
+    timestamps: pd.Series,
+    y_true: np.ndarray,
+    y_pred: np.ndarray,
+    model_name: str,
+    out_path: Path,
+) -> None:
+    if len(y_true) == 0 or len(y_pred) == 0:
+        return
+    y_true = np.asarray(y_true, dtype=float)
+    y_pred = np.asarray(y_pred, dtype=float)
+    ts = pd.to_datetime(timestamps).reset_index(drop=True)
+    show_n = min(len(ts), 24 * 14)
+    ts_short = ts.iloc[:show_n]
+    y_t = y_true[:show_n]
+    y_p = y_pred[:show_n]
+
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(11.5, 6.2), sharex=True, gridspec_kw={"height_ratios": [3, 1]})
+    ax1.plot(ts_short, y_t, color="#1F77B4", linewidth=1.8, label="Actual")
+    ax1.plot(ts_short, y_p, color="#D62728", linewidth=1.5, alpha=0.9, label=f"Predicted ({model_name})")
+    ax1.set_ylabel("PM2.5 (µg/m³)")
+    ax1.set_title("Forecast vs Actual PM2.5 (first 14 days of test window)")
+    ax1.grid(alpha=0.22, linestyle="--")
+    ax1.legend(loc="upper right", framealpha=0.95)
+
+    resid = y_p - y_t
+    ax2.axhline(0.0, color="#333333", linewidth=1.0)
+    ax2.plot(ts_short, resid, color="#9467BD", linewidth=1.0)
+    ax2.set_ylabel("Residual")
+    ax2.set_xlabel("Timestamp")
+    ax2.grid(alpha=0.22, linestyle="--")
+    fig.tight_layout()
+    _save_figure(fig, out_path)
 
 
 def run_full_pipeline(cfg: PipelineConfig, *, enable_tuning: bool = True) -> dict[str, Any]:
@@ -184,6 +311,14 @@ def run_full_pipeline(cfg: PipelineConfig, *, enable_tuning: bool = True) -> dic
             pred_map["AR(24)_frozen"] = ar_series[idx]
             if cfg.models.include_sarima:
                 pred_map["SARIMA_auto"] = sarima[idx]
+        else:
+            pred_map["AR(24)_frozen"] = frozen_ar_h_step_from_origins(
+                y_full,
+                split.train_end,
+                idx,
+                h=h,
+                lags=24,
+            )
         r = Ridge(alpha=1.0, solver="lsqr", random_state=cfg.models.random_state).fit(Xtr_h, ytr_h)
         pred_map["Ridge"] = r.predict(Xte_h)
         for name in tree_model_names:
@@ -282,6 +417,15 @@ def run_full_pipeline(cfg: PipelineConfig, *, enable_tuning: bool = True) -> dic
     }
 
     _plot_mae_by_horizon(hz_df, cfg.output.plots_dir / "mae_by_horizon.png")
+    _plot_model_performance_1h(results_1h, bootstrap, cfg.output.plots_dir / "model_performance_1h_ci.png")
+    _plot_walk_forward_stability(wf_df, cfg.output.plots_dir / "walk_forward_mae_stability.png")
+    _plot_forecast_vs_actual(
+        te["timestamp"],
+        y_te,
+        preds_test[best_model],
+        best_model,
+        cfg.output.plots_dir / "forecast_vs_actual_best_1h.png",
+    )
     split_info = {
         "train": {
             "timestamp_min": tr["timestamp"].min().isoformat(),
