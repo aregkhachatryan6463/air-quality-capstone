@@ -32,6 +32,16 @@ manuscript/*.out
 manuscript/*.blg
 manuscript/*.bbl
 manuscript/*.synctex.gz
+manuscript/main.pdf
+
+# Personal/reference files not needed in repo
+Project Proposal v3.pdf
+*.ipynb
+
+# Legacy scripts replaced by src/ + run_pipeline.py
+sensitivity_analysis.py
+yerevan_pm25_data_overview.py
+yerevan_pm25_forecasting.py
 
 # Generated pipeline outputs
 results/plots/
