@@ -15,8 +15,10 @@ Areg Khachatryan · Rafayel Shirakyan (Supervisor)
 - `src/evaluation/` - metrics, statistical tests, validation schemes
 - `src/pipeline/` - orchestration logic
 - `results/` - generated model outputs (`plots/`, `tables/`, `json/`)
-- `images/` - manuscript-ready visuals
-- `notebooks/` - optional notebook wrappers
+- `figures_data_quality/` - supplementary quality-audit outputs
+- `docs/` - methodology and project notes
+- `manuscript/` - paper source (`main.tex`, bibliography)
+- `paper/` - paper-ready exported tables and summary
 
 ## Single runnable pipeline
 
@@ -59,4 +61,5 @@ This command will:
 
 ## Legacy scripts
 
-Older scripts (`yerevan_pm25_forecasting.py`, `sensitivity_analysis.py`, `export_paper_assets.py`) are kept for backward compatibility and comparison, but the recommended execution path is `run_pipeline.py`.
+Legacy training scripts were removed to keep the repository clean and reproducible around one execution path.  
+Use `run_pipeline.py` for model training/evaluation and `export_paper_assets.py` for manuscript table exports.

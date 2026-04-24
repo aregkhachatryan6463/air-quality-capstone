@@ -1,34 +1,38 @@
 # Data
 
-The **Air Quality Data** folder is not stored in this repository (it exceeds GitHub size limits). It is provided via Google Drive.
+The **Air Quality Data** folder is not stored in this repository (it exceeds GitHub size limits). It is downloaded from Google Drive.
 
 ## Download and run
 
 1. **Install dependencies:**  
    `pip install -r requirements.txt`
 
-2. **Download the data:**  
-   `python download_data.py`  
-   This fetches the data zip from Google Drive and extracts it as `Air Quality Data` in the project root.
+2. **Run the main pipeline (recommended):**  
+   `python run_pipeline.py`  
+   This checks for data and downloads it automatically if missing.
 
-3. **Run the overview:**  
-   `python yerevan_pm25_data_overview.py`
+3. **Optional manual download only:**  
+   `python download_data.py`
 
 ## Manual download
 
-Alternatively, download the zip from Google Drive and unzip it in the project root so that the folder is named **Air Quality Data**:
+Alternatively, download the zip and unzip it under:
+
+`data/raw/Air Quality Data/`
 
 - [Air Quality Data (Google Drive)](https://drive.google.com/file/d/1QaDT5_XFKUMXbYoZLO8BsfzCstlNgwnp/view?usp=drive_link)
 
 ## Data structure
 
-After extraction, the layout should be:
+After extraction, the key layout is:
 
 ```
-Air Quality Data/
-├── README.txt, LICENSE.txt
-├── sensors.csv, city_avg_daily.csv
-├── city_avg_hourly/   (city_avg_hourly_2019.csv … city_avg_hourly_2026.csv)
+data/raw/Air Quality Data/
+├── README.txt
+├── LICENSE.txt
+├── sensors.csv
+├── city_avg_daily.csv
+├── city_avg_hourly/
 ├── station_avg_hourly/
 ├── sensor_avg_hourly/
 └── measurements/
