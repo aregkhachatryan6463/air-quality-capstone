@@ -91,25 +91,34 @@ def bootstrap_mae_ci(
 def main() -> None:
     root = os.getcwd()
     results_root = os.path.join(root, "results")
-    legacy_root = root
-    paths = {
-        "main": os.path.join(results_root, "forecast_results_1h.csv"),
-        "horizon": os.path.join(results_root, "forecast_results_by_horizon.csv"),
-        "dm": os.path.join(results_root, "diebold_mariano_test.csv"),
+    tables_dir = os.path.join(results_root, "tables")
+    # Pipeline writes tabular outputs under results/tables/; older runs may have CSVs in results/ or project root
+    candidates = {
+        "main": [
+            os.path.join(tables_dir, "forecast_results_1h.csv"),
+            os.path.join(results_root, "forecast_results_1h.csv"),
+            os.path.join(root, "forecast_results_1h.csv"),
+        ],
+        "horizon": [
+            os.path.join(tables_dir, "forecast_results_by_horizon.csv"),
+            os.path.join(results_root, "forecast_results_by_horizon.csv"),
+            os.path.join(root, "forecast_results_by_horizon.csv"),
+        ],
+        "dm": [
+            os.path.join(tables_dir, "diebold_mariano_test.csv"),
+            os.path.join(results_root, "diebold_mariano_test.csv"),
+            os.path.join(root, "diebold_mariano_test.csv"),
+        ],
+    }
+    paths: dict[str, str] = {
         "bundle": os.path.join(root, "paper", "bundle", "test_1h_predictions.npz"),
     }
-    legacy_paths = {
-        "main": os.path.join(legacy_root, "forecast_results_1h.csv"),
-        "horizon": os.path.join(legacy_root, "forecast_results_by_horizon.csv"),
-        "dm": os.path.join(legacy_root, "diebold_mariano_test.csv"),
-    }
     for key in ("main", "horizon", "dm"):
-        if not os.path.isfile(paths[key]) and os.path.isfile(legacy_paths[key]):
-            paths[key] = legacy_paths[key]
-    for key in ("main", "horizon", "dm"):
-        if not os.path.isfile(paths[key]):
-            print(f"Missing {paths[key]} — run run_pipeline.py first.", file=sys.stderr)
+        p = next((c for c in candidates[key] if os.path.isfile(c)), None)
+        if p is None:
+            print(f"Missing {key} CSV (tried {candidates[key]}) — run run_pipeline.py first.", file=sys.stderr)
             sys.exit(1)
+        paths[key] = p
 
     paper_root = os.path.join(root, "paper")
     tab_dir = os.path.join(paper_root, "tables")

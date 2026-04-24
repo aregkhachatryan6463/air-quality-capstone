@@ -9,23 +9,41 @@ from xgboost import XGBRegressor
 from src.evaluation.metrics import regression_metrics
 
 
+def make_tree_model(model_name: str, *, random_state: int = 42, params: dict[str, Any] | None = None):
+    p = dict(params or {})
+    if model_name == "RandomForest":
+        return RandomForestRegressor(random_state=random_state, n_jobs=-1, **p)
+    if model_name == "XGBoost":
+        return XGBRegressor(random_state=random_state, n_jobs=-1, **p)
+    if model_name == "LightGBM":
+        from lightgbm import LGBMRegressor
+
+        return LGBMRegressor(random_state=random_state, **p)
+    raise ValueError(model_name)
+
+
 def build_baseline_models(random_state: int = 42) -> dict[str, Any]:
     models: dict[str, Any] = {
         "RidgeLikePlaceholder": None,  # actual Ridge trained in pipeline for minimal deps here
-        "RandomForest": RandomForestRegressor(
-            n_estimators=100, max_depth=10, random_state=random_state, n_jobs=-1
+        "RandomForest": make_tree_model(
+            "RandomForest",
+            random_state=random_state,
+            params={"n_estimators": 100, "max_depth": 10},
         ),
-        "XGBoost": XGBRegressor(
-            n_estimators=100, max_depth=6, learning_rate=0.1, random_state=random_state, n_jobs=-1
+        "XGBoost": make_tree_model(
+            "XGBoost",
+            random_state=random_state,
+            params={"n_estimators": 100, "max_depth": 6, "learning_rate": 0.1},
         ),
     }
     try:
-        from lightgbm import LGBMRegressor
+        models["LightGBM"] = make_tree_model(
+            "LightGBM",
+            random_state=random_state,
+            params={"n_estimators": 200, "learning_rate": 0.05, "max_depth": -1},
+        )
     except Exception:
         return models
-    models["LightGBM"] = LGBMRegressor(
-        n_estimators=200, learning_rate=0.05, max_depth=-1, random_state=random_state
-    )
     return models
 
 

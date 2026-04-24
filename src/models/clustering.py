@@ -17,6 +17,22 @@ class DistrictClusteringResult:
     diagnostics: dict[str, Any]
 
 
+YEREVAN_DISTRICT_ORDER = [
+    "ajapnyak",
+    "arabkir",
+    "avan",
+    "davtashen",
+    "erebuni",
+    "kanaker-zeytun",
+    "kentron",
+    "malatia-sebastia",
+    "nork-marash",
+    "nor-nork",
+    "nubarashen",
+    "shengavit",
+]
+
+
 def build_district_mapping(
     station_meta: pd.DataFrame | None,
     *,
@@ -36,6 +52,26 @@ def build_district_mapping(
             n_districts=1,
             diagnostics={"reason": "station metadata missing"},
         )
+
+    if "district_slug" in station_meta.columns and station_id_col in station_meta.columns:
+        out = station_meta[[station_id_col, "district_slug"]].copy()
+        out["district_slug"] = out["district_slug"].astype(str).str.strip().str.lower()
+        district_to_id = {d: i for i, d in enumerate(YEREVAN_DISTRICT_ORDER)}
+        out = out[out["district_slug"].isin(district_to_id.keys())]
+        out = out.drop_duplicates(subset=[station_id_col], keep="first")
+        if not out.empty:
+            out["district_id"] = out["district_slug"].map(district_to_id).astype(int)
+            out = out.rename(columns={"district_slug": "district_name"})
+            return DistrictClusteringResult(
+                mapping=out[[station_id_col, "district_id", "district_name"]].reset_index(drop=True),
+                method="yerevan_admin_district",
+                n_districts=len(YEREVAN_DISTRICT_ORDER),
+                diagnostics={
+                    "district_order": YEREVAN_DISTRICT_ORDER,
+                    "n_stations_mapped": int(len(out)),
+                    "n_districts_present": int(out["district_id"].nunique()),
+                },
+            )
 
     req = {lon_col, lat_col, station_id_col}
     if not req.issubset(station_meta.columns):

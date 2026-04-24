@@ -4,5 +4,6 @@
 - `results_summary.json` — compact summary for manuscript writing
 - `bundle/` — Test-set predictions (local only; not committed to git)
 
-Primary model figures are generated in `results/plots/` from `python run_pipeline.py`.
-See `docs/METHODOLOGY.md` for a concise description of the active pipeline.
+- Pipeline **figures**: `results/plots/` (from `python run_pipeline.py`).
+- Pipeline **numeric tables (CSV)**: `results/tables/` — `export_paper_assets.py` reads these and writes LaTeX into `paper/tables/`.
+See `docs/METHODOLOGY.md` and `results/README.md` for layout.
