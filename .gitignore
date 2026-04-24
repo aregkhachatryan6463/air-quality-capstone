@@ -43,10 +43,12 @@ sensitivity_analysis.py
 yerevan_pm25_data_overview.py
 yerevan_pm25_forecasting.py
 
-# Generated pipeline outputs
-results/plots/
-results/tables/
-results/json/
+# Generated pipeline outputs: tracked under results/{plots,tables,json} for a clean layout.
+# Ignore stray re-generated files at results/ root (canonical paths use subfolders).
+results/*.csv
+results/split_info.json
+# Local debug logs
+debug-*.log
 figures_data_quality/
 paper/figures/
 

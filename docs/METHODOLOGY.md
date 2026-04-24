@@ -13,7 +13,7 @@ Missingness is audited first, then controlled imputation is applied by gap lengt
 - medium gaps: constrained interpolation/temporal carry
 - long gaps: preserved as missing when uncertainty is high
 
-The pipeline saves missingness and imputation impact summaries to `results/json/results_summary.json`.
+The pipeline saves missingness and imputation impact summaries to `results/json/results_summary.json`. All tabular exports (CSV) go to `results/tables/`; all figures to `results/plots/`. See `results/README.md`.
 
 ## Features
 

@@ -14,7 +14,7 @@ Areg Khachatryan · Rafayel Shirakyan (Supervisor)
 - `src/models/` - ARIMA/SARIMA, tree models, LightGBM, DeepAR adapter, district clustering
 - `src/evaluation/` - metrics, statistical tests, validation schemes
 - `src/pipeline/` - orchestration logic
-- `results/` - generated model outputs (`plots/`, `tables/`, `json/`)
+- `results/` - generated outputs only: **`results/plots/`** (all figures), **`results/tables/`** (all CSVs), **`results/json/`** (summaries). See `results/README.md`.
 - `figures_data_quality/` - supplementary quality-audit outputs
 - `docs/` - methodology and project notes
 - `manuscript/` - paper source (`main.tex`, bibliography)
@@ -40,7 +40,7 @@ This command will:
 3. Build features and chronological split
 4. Train baseline, ARIMA-class, and tree models (with optional Hyperopt tuning)
 5. Run walk-forward validation
-6. Generate outputs and write `results/json/results_summary.json`
+6. Write CSVs to `results/tables/`, figures to `results/plots/`, and `results/json/results_summary.json`
 
 ## Core model scope
 

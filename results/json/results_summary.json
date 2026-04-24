@@ -1,0 +1,2351 @@
+{
+  "best_mae_model_1h": "AR(24)_frozen",
+  "best_mae_value_1h": 2.4118775555635037,
+  "n_models_1h": 6,
+  "split_info": {
+    "train": {
+      "timestamp_min": "2019-02-02T00:00:00",
+      "timestamp_max": "2023-12-27T20:00:00",
+      "n_rows": 42899
+    },
+    "val": {
+      "timestamp_min": "2023-12-27T21:00:00",
+      "timestamp_max": "2025-01-13T21:00:00",
+      "n_rows": 9193
+    },
+    "test": {
+      "timestamp_min": "2025-01-13T22:00:00",
+      "timestamp_max": "2026-01-31T22:00:00",
+      "n_rows": 9193
+    }
+  },
+  "sarima_orders": {
+    "enabled": false,
+    "order": null,
+    "seasonal_order": null
+  },
+  "missingness_audit": {
+    "avg_pm2.5": {
+      "missing_fraction": 0.001971711641246252,
+      "n_missing": 121,
+      "max_gap": 39,
+      "p95_gap": 29.0
+    },
+    "avg_pm10": {
+      "missing_fraction": 0.001971711641246252,
+      "n_missing": 121,
+      "max_gap": 39,
+      "p95_gap": 29.0
+    },
+    "avg_temperature": {
+      "missing_fraction": 0.0024768609047060358,
+      "n_missing": 152,
+      "max_gap": 39,
+      "p95_gap": 18.849999999999998
+    },
+    "avg_pressure": {
+      "missing_fraction": 0.0028353539303871723,
+      "n_missing": 174,
+      "max_gap": 39,
+      "p95_gap": 18.0
+    },
+    "avg_humidity": {
+      "missing_fraction": 0.0024768609047060358,
+      "n_missing": 152,
+      "max_gap": 39,
+      "p95_gap": 18.849999999999998
+    },
+    "monthly_missingness": {
+      "avg_pm2.5": [
+        {
+          "year": 2019,
+          "month": 2,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2019,
+          "month": 3,
+          "missing_fraction": 0.09946236559139784
+        },
+        {
+          "year": 2019,
+          "month": 4,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2019,
+          "month": 5,
+          "missing_fraction": 0.012096774193548387
+        },
+        {
+          "year": 2019,
+          "month": 6,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2019,
+          "month": 7,
+          "missing_fraction": 0.008064516129032258
+        },
+        {
+          "year": 2019,
+          "month": 8,
+          "missing_fraction": 0.016129032258064516
+        },
+        {
+          "year": 2019,
+          "month": 9,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2019,
+          "month": 10,
+          "missing_fraction": 0.01747311827956989
+        },
+        {
+          "year": 2019,
+          "month": 11,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2019,
+          "month": 12,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2020,
+          "month": 1,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2020,
+          "month": 2,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2020,
+          "month": 3,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2020,
+          "month": 4,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2020,
+          "month": 5,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2020,
+          "month": 6,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2020,
+          "month": 7,
+          "missing_fraction": 0.0013440860215053765
+        },
+        {
+          "year": 2020,
+          "month": 8,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2020,
+          "month": 9,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2020,
+          "month": 10,
+          "missing_fraction": 0.008064516129032258
+        },
+        {
+          "year": 2020,
+          "month": 11,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2020,
+          "month": 12,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2021,
+          "month": 1,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2021,
+          "month": 2,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2021,
+          "month": 3,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2021,
+          "month": 4,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2021,
+          "month": 5,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2021,
+          "month": 6,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2021,
+          "month": 7,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2021,
+          "month": 8,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2021,
+          "month": 9,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2021,
+          "month": 10,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2021,
+          "month": 11,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2021,
+          "month": 12,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2022,
+          "month": 1,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2022,
+          "month": 2,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2022,
+          "month": 3,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2022,
+          "month": 4,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2022,
+          "month": 5,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2022,
+          "month": 6,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2022,
+          "month": 7,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2022,
+          "month": 8,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2022,
+          "month": 9,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2022,
+          "month": 10,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2022,
+          "month": 11,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2022,
+          "month": 12,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2023,
+          "month": 1,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2023,
+          "month": 2,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2023,
+          "month": 3,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2023,
+          "month": 4,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2023,
+          "month": 5,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2023,
+          "month": 6,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2023,
+          "month": 7,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2023,
+          "month": 8,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2023,
+          "month": 9,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2023,
+          "month": 10,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2023,
+          "month": 11,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2023,
+          "month": 12,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2024,
+          "month": 1,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2024,
+          "month": 2,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2024,
+          "month": 3,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2024,
+          "month": 4,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2024,
+          "month": 5,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2024,
+          "month": 6,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2024,
+          "month": 7,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2024,
+          "month": 8,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2024,
+          "month": 9,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2024,
+          "month": 10,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2024,
+          "month": 11,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2024,
+          "month": 12,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2025,
+          "month": 1,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2025,
+          "month": 2,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2025,
+          "month": 3,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2025,
+          "month": 4,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2025,
+          "month": 5,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2025,
+          "month": 6,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2025,
+          "month": 7,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2025,
+          "month": 8,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2025,
+          "month": 9,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2025,
+          "month": 10,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2025,
+          "month": 11,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2025,
+          "month": 12,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2026,
+          "month": 1,
+          "missing_fraction": 0.0
+        }
+      ],
+      "avg_pm10": [
+        {
+          "year": 2019,
+          "month": 2,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2019,
+          "month": 3,
+          "missing_fraction": 0.09946236559139784
+        },
+        {
+          "year": 2019,
+          "month": 4,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2019,
+          "month": 5,
+          "missing_fraction": 0.012096774193548387
+        },
+        {
+          "year": 2019,
+          "month": 6,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2019,
+          "month": 7,
+          "missing_fraction": 0.008064516129032258
+        },
+        {
+          "year": 2019,
+          "month": 8,
+          "missing_fraction": 0.016129032258064516
+        },
+        {
+          "year": 2019,
+          "month": 9,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2019,
+          "month": 10,
+          "missing_fraction": 0.01747311827956989
+        },
+        {
+          "year": 2019,
+          "month": 11,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2019,
+          "month": 12,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2020,
+          "month": 1,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2020,
+          "month": 2,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2020,
+          "month": 3,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2020,
+          "month": 4,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2020,
+          "month": 5,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2020,
+          "month": 6,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2020,
+          "month": 7,
+          "missing_fraction": 0.0013440860215053765
+        },
+        {
+          "year": 2020,
+          "month": 8,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2020,
+          "month": 9,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2020,
+          "month": 10,
+          "missing_fraction": 0.008064516129032258
+        },
+        {
+          "year": 2020,
+          "month": 11,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2020,
+          "month": 12,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2021,
+          "month": 1,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2021,
+          "month": 2,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2021,
+          "month": 3,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2021,
+          "month": 4,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2021,
+          "month": 5,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2021,
+          "month": 6,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2021,
+          "month": 7,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2021,
+          "month": 8,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2021,
+          "month": 9,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2021,
+          "month": 10,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2021,
+          "month": 11,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2021,
+          "month": 12,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2022,
+          "month": 1,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2022,
+          "month": 2,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2022,
+          "month": 3,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2022,
+          "month": 4,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2022,
+          "month": 5,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2022,
+          "month": 6,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2022,
+          "month": 7,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2022,
+          "month": 8,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2022,
+          "month": 9,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2022,
+          "month": 10,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2022,
+          "month": 11,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2022,
+          "month": 12,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2023,
+          "month": 1,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2023,
+          "month": 2,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2023,
+          "month": 3,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2023,
+          "month": 4,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2023,
+          "month": 5,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2023,
+          "month": 6,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2023,
+          "month": 7,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2023,
+          "month": 8,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2023,
+          "month": 9,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2023,
+          "month": 10,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2023,
+          "month": 11,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2023,
+          "month": 12,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2024,
+          "month": 1,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2024,
+          "month": 2,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2024,
+          "month": 3,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2024,
+          "month": 4,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2024,
+          "month": 5,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2024,
+          "month": 6,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2024,
+          "month": 7,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2024,
+          "month": 8,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2024,
+          "month": 9,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2024,
+          "month": 10,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2024,
+          "month": 11,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2024,
+          "month": 12,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2025,
+          "month": 1,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2025,
+          "month": 2,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2025,
+          "month": 3,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2025,
+          "month": 4,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2025,
+          "month": 5,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2025,
+          "month": 6,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2025,
+          "month": 7,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2025,
+          "month": 8,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2025,
+          "month": 9,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2025,
+          "month": 10,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2025,
+          "month": 11,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2025,
+          "month": 12,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2026,
+          "month": 1,
+          "missing_fraction": 0.0
+        }
+      ],
+      "avg_temperature": [
+        {
+          "year": 2019,
+          "month": 2,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2019,
+          "month": 3,
+          "missing_fraction": 0.09946236559139784
+        },
+        {
+          "year": 2019,
+          "month": 4,
+          "missing_fraction": 0.015277777777777777
+        },
+        {
+          "year": 2019,
+          "month": 5,
+          "missing_fraction": 0.04032258064516129
+        },
+        {
+          "year": 2019,
+          "month": 6,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2019,
+          "month": 7,
+          "missing_fraction": 0.008064516129032258
+        },
+        {
+          "year": 2019,
+          "month": 8,
+          "missing_fraction": 0.016129032258064516
+        },
+        {
+          "year": 2019,
+          "month": 9,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2019,
+          "month": 10,
+          "missing_fraction": 0.01747311827956989
+        },
+        {
+          "year": 2019,
+          "month": 11,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2019,
+          "month": 12,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2020,
+          "month": 1,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2020,
+          "month": 2,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2020,
+          "month": 3,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2020,
+          "month": 4,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2020,
+          "month": 5,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2020,
+          "month": 6,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2020,
+          "month": 7,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2020,
+          "month": 8,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2020,
+          "month": 9,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2020,
+          "month": 10,
+          "missing_fraction": 0.008064516129032258
+        },
+        {
+          "year": 2020,
+          "month": 11,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2020,
+          "month": 12,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2021,
+          "month": 1,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2021,
+          "month": 2,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2021,
+          "month": 3,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2021,
+          "month": 4,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2021,
+          "month": 5,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2021,
+          "month": 6,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2021,
+          "month": 7,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2021,
+          "month": 8,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2021,
+          "month": 9,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2021,
+          "month": 10,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2021,
+          "month": 11,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2021,
+          "month": 12,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2022,
+          "month": 1,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2022,
+          "month": 2,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2022,
+          "month": 3,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2022,
+          "month": 4,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2022,
+          "month": 5,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2022,
+          "month": 6,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2022,
+          "month": 7,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2022,
+          "month": 8,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2022,
+          "month": 9,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2022,
+          "month": 10,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2022,
+          "month": 11,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2022,
+          "month": 12,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2023,
+          "month": 1,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2023,
+          "month": 2,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2023,
+          "month": 3,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2023,
+          "month": 4,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2023,
+          "month": 5,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2023,
+          "month": 6,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2023,
+          "month": 7,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2023,
+          "month": 8,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2023,
+          "month": 9,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2023,
+          "month": 10,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2023,
+          "month": 11,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2023,
+          "month": 12,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2024,
+          "month": 1,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2024,
+          "month": 2,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2024,
+          "month": 3,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2024,
+          "month": 4,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2024,
+          "month": 5,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2024,
+          "month": 6,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2024,
+          "month": 7,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2024,
+          "month": 8,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2024,
+          "month": 9,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2024,
+          "month": 10,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2024,
+          "month": 11,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2024,
+          "month": 12,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2025,
+          "month": 1,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2025,
+          "month": 2,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2025,
+          "month": 3,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2025,
+          "month": 4,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2025,
+          "month": 5,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2025,
+          "month": 6,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2025,
+          "month": 7,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2025,
+          "month": 8,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2025,
+          "month": 9,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2025,
+          "month": 10,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2025,
+          "month": 11,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2025,
+          "month": 12,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2026,
+          "month": 1,
+          "missing_fraction": 0.0
+        }
+      ],
+      "avg_pressure": [
+        {
+          "year": 2019,
+          "month": 2,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2019,
+          "month": 3,
+          "missing_fraction": 0.10080645161290322
+        },
+        {
+          "year": 2019,
+          "month": 4,
+          "missing_fraction": 0.015277777777777777
+        },
+        {
+          "year": 2019,
+          "month": 5,
+          "missing_fraction": 0.038978494623655914
+        },
+        {
+          "year": 2019,
+          "month": 6,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2019,
+          "month": 7,
+          "missing_fraction": 0.008064516129032258
+        },
+        {
+          "year": 2019,
+          "month": 8,
+          "missing_fraction": 0.016129032258064516
+        },
+        {
+          "year": 2019,
+          "month": 9,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2019,
+          "month": 10,
+          "missing_fraction": 0.01747311827956989
+        },
+        {
+          "year": 2019,
+          "month": 11,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2019,
+          "month": 12,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2020,
+          "month": 1,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2020,
+          "month": 2,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2020,
+          "month": 3,
+          "missing_fraction": 0.012096774193548387
+        },
+        {
+          "year": 2020,
+          "month": 4,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2020,
+          "month": 5,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2020,
+          "month": 6,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2020,
+          "month": 7,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2020,
+          "month": 8,
+          "missing_fraction": 0.01747311827956989
+        },
+        {
+          "year": 2020,
+          "month": 9,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2020,
+          "month": 10,
+          "missing_fraction": 0.008064516129032258
+        },
+        {
+          "year": 2020,
+          "month": 11,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2020,
+          "month": 12,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2021,
+          "month": 1,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2021,
+          "month": 2,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2021,
+          "month": 3,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2021,
+          "month": 4,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2021,
+          "month": 5,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2021,
+          "month": 6,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2021,
+          "month": 7,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2021,
+          "month": 8,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2021,
+          "month": 9,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2021,
+          "month": 10,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2021,
+          "month": 11,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2021,
+          "month": 12,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2022,
+          "month": 1,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2022,
+          "month": 2,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2022,
+          "month": 3,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2022,
+          "month": 4,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2022,
+          "month": 5,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2022,
+          "month": 6,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2022,
+          "month": 7,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2022,
+          "month": 8,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2022,
+          "month": 9,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2022,
+          "month": 10,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2022,
+          "month": 11,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2022,
+          "month": 12,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2023,
+          "month": 1,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2023,
+          "month": 2,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2023,
+          "month": 3,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2023,
+          "month": 4,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2023,
+          "month": 5,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2023,
+          "month": 6,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2023,
+          "month": 7,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2023,
+          "month": 8,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2023,
+          "month": 9,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2023,
+          "month": 10,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2023,
+          "month": 11,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2023,
+          "month": 12,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2024,
+          "month": 1,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2024,
+          "month": 2,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2024,
+          "month": 3,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2024,
+          "month": 4,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2024,
+          "month": 5,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2024,
+          "month": 6,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2024,
+          "month": 7,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2024,
+          "month": 8,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2024,
+          "month": 9,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2024,
+          "month": 10,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2024,
+          "month": 11,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2024,
+          "month": 12,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2025,
+          "month": 1,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2025,
+          "month": 2,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2025,
+          "month": 3,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2025,
+          "month": 4,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2025,
+          "month": 5,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2025,
+          "month": 6,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2025,
+          "month": 7,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2025,
+          "month": 8,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2025,
+          "month": 9,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2025,
+          "month": 10,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2025,
+          "month": 11,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2025,
+          "month": 12,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2026,
+          "month": 1,
+          "missing_fraction": 0.0
+        }
+      ],
+      "avg_humidity": [
+        {
+          "year": 2019,
+          "month": 2,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2019,
+          "month": 3,
+          "missing_fraction": 0.09946236559139784
+        },
+        {
+          "year": 2019,
+          "month": 4,
+          "missing_fraction": 0.015277777777777777
+        },
+        {
+          "year": 2019,
+          "month": 5,
+          "missing_fraction": 0.04032258064516129
+        },
+        {
+          "year": 2019,
+          "month": 6,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2019,
+          "month": 7,
+          "missing_fraction": 0.008064516129032258
+        },
+        {
+          "year": 2019,
+          "month": 8,
+          "missing_fraction": 0.016129032258064516
+        },
+        {
+          "year": 2019,
+          "month": 9,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2019,
+          "month": 10,
+          "missing_fraction": 0.01747311827956989
+        },
+        {
+          "year": 2019,
+          "month": 11,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2019,
+          "month": 12,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2020,
+          "month": 1,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2020,
+          "month": 2,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2020,
+          "month": 3,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2020,
+          "month": 4,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2020,
+          "month": 5,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2020,
+          "month": 6,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2020,
+          "month": 7,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2020,
+          "month": 8,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2020,
+          "month": 9,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2020,
+          "month": 10,
+          "missing_fraction": 0.008064516129032258
+        },
+        {
+          "year": 2020,
+          "month": 11,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2020,
+          "month": 12,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2021,
+          "month": 1,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2021,
+          "month": 2,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2021,
+          "month": 3,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2021,
+          "month": 4,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2021,
+          "month": 5,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2021,
+          "month": 6,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2021,
+          "month": 7,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2021,
+          "month": 8,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2021,
+          "month": 9,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2021,
+          "month": 10,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2021,
+          "month": 11,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2021,
+          "month": 12,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2022,
+          "month": 1,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2022,
+          "month": 2,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2022,
+          "month": 3,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2022,
+          "month": 4,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2022,
+          "month": 5,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2022,
+          "month": 6,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2022,
+          "month": 7,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2022,
+          "month": 8,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2022,
+          "month": 9,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2022,
+          "month": 10,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2022,
+          "month": 11,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2022,
+          "month": 12,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2023,
+          "month": 1,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2023,
+          "month": 2,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2023,
+          "month": 3,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2023,
+          "month": 4,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2023,
+          "month": 5,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2023,
+          "month": 6,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2023,
+          "month": 7,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2023,
+          "month": 8,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2023,
+          "month": 9,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2023,
+          "month": 10,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2023,
+          "month": 11,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2023,
+          "month": 12,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2024,
+          "month": 1,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2024,
+          "month": 2,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2024,
+          "month": 3,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2024,
+          "month": 4,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2024,
+          "month": 5,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2024,
+          "month": 6,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2024,
+          "month": 7,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2024,
+          "month": 8,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2024,
+          "month": 9,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2024,
+          "month": 10,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2024,
+          "month": 11,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2024,
+          "month": 12,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2025,
+          "month": 1,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2025,
+          "month": 2,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2025,
+          "month": 3,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2025,
+          "month": 4,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2025,
+          "month": 5,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2025,
+          "month": 6,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2025,
+          "month": 7,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2025,
+          "month": 8,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2025,
+          "month": 9,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2025,
+          "month": 10,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2025,
+          "month": 11,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2025,
+          "month": 12,
+          "missing_fraction": 0.0
+        },
+        {
+          "year": 2026,
+          "month": 1,
+          "missing_fraction": 0.0
+        }
+      ]
+    }
+  },
+  "imputation_summary": {
+    "per_column": {
+      "avg_pm2.5": {
+        "short_imputed": 3,
+        "medium_imputed": 79,
+        "long_left_missing": 39,
+        "final_missing": 39,
+        "final_missing_fraction": 0.0006355103637074697
+      },
+      "avg_pm10": {
+        "short_imputed": 3,
+        "medium_imputed": 79,
+        "long_left_missing": 39,
+        "final_missing": 39,
+        "final_missing_fraction": 0.0006355103637074697
+      },
+      "avg_temperature": {
+        "short_imputed": 15,
+        "medium_imputed": 98,
+        "long_left_missing": 39,
+        "final_missing": 39,
+        "final_missing_fraction": 0.0006355103637074697
+      },
+      "avg_pressure": {
+        "short_imputed": 21,
+        "medium_imputed": 114,
+        "long_left_missing": 39,
+        "final_missing": 39,
+        "final_missing_fraction": 0.0006355103637074697
+      },
+      "avg_humidity": {
+        "short_imputed": 15,
+        "medium_imputed": 98,
+        "long_left_missing": 39,
+        "final_missing": 39,
+        "final_missing_fraction": 0.0006355103637074697
+      }
+    }
+  },
+  "walk_forward_available_folds": 0,
+  "walk_forward_mean_mae_by_model": {},
+  "bootstrap_mae_95ci": {
+    "Persistence": {
+      "mae": 2.7474253152303683,
+      "ci_low": 2.663727509138464,
+      "ci_high": 2.829883945055606
+    },
+    "Seasonal_naive_24h": {
+      "mae": 9.252826716050611,
+      "ci_low": 8.98034078821289,
+      "ci_high": 9.55425463084607
+    },
+    "AR(24)_frozen": {
+      "mae": 2.4118775555635037,
+      "ci_low": 2.3382377821693097,
+      "ci_high": 2.490734299680708
+    },
+    "Ridge": {
+      "mae": 4.993561510488995,
+      "ci_low": 4.881571647390118,
+      "ci_high": 5.107569120729065
+    },
+    "RandomForest": {
+      "mae": 4.9956871591343495,
+      "ci_low": 4.885523221832308,
+      "ci_high": 5.10185309537643
+    },
+    "XGBoost": {
+      "mae": 4.833367571763626,
+      "ci_low": 4.721839978025172,
+      "ci_high": 4.943680346569062
+    }
+  },
+  "diebold_mariano": [
+    {
+      "comparison": "AR(24)_frozen_vs_Persistence_MAEloss",
+      "DM": 14.296608654586171,
+      "p_value_two_sided": 0.0,
+      "n": 9192.0
+    },
+    {
+      "comparison": "AR(24)_frozen_vs_Ridge_MAEloss",
+      "DM": 44.07195423040718,
+      "p_value_two_sided": 0.0,
+      "n": 9192.0
+    }
+  ],
+  "tuned_models": {},
+  "district_clustering": {
+    "method": "yerevan_admin_district",
+    "n_districts": 12,
+    "diagnostics": {
+      "district_order": [
+        "ajapnyak",
+        "arabkir",
+        "avan",
+        "davtashen",
+        "erebuni",
+        "kanaker-zeytun",
+        "kentron",
+        "malatia-sebastia",
+        "nork-marash",
+        "nor-nork",
+        "nubarashen",
+        "shengavit"
+      ],
+      "n_stations_mapped": 205,
+      "n_districts_present": 11
+    },
+    "n_yerevan_station_metadata": 205,
+    "station_group_map_generated": true,
+    "station_group_map_path": "C:\\Users\\aregk\\OneDrive\\Documents\\Areg Khachatryan\\AUA\\AUA 2025-2026 2\\Capstone\\Air Quality Capstone project\\results\\plots\\station_groups_map.png",
+    "station_group_map_summary": {
+      "generated": true,
+      "stations_total_unique": 205,
+      "stations_with_location": 205,
+      "stations_missing_location": 0,
+      "group_station_counts": {
+        "0": 11,
+        "1": 35,
+        "2": 13,
+        "3": 14,
+        "4": 8,
+        "5": 19,
+        "6": 50,
+        "7": 15,
+        "8": 6,
+        "9": 17,
+        "10": 0,
+        "11": 17
+      },
+      "used_web_basemap": true
+    }
+  },
+  "deepar": {
+    "enabled": false,
+    "status": "skipped"
+  },
+  "district_unit_forecasts": {
+    "enabled": true,
+    "n_result_rows": 66,
+    "n_districts_evaluated": 11,
+    "csv_path": "C:\\Users\\aregk\\OneDrive\\Documents\\Areg Khachatryan\\AUA\\AUA 2025-2026 2\\Capstone\\Air Quality Capstone project\\results\\forecast_results_district_units_1h.csv",
+    "weighted_mean_mae_by_model": {
+      "AR(24)_frozen": 5.458329039347848,
+      "Persistence": 5.764438061840853,
+      "Ridge": 8.776525415328106,
+      "RandomForest": 9.7543242703947,
+      "XGBoost": 10.124272330204118,
+      "Seasonal_naive_24h": 16.118200733793504
+    }
+  },
+  "station_unit_forecasts": {
+    "enabled": true,
+    "n_result_rows": 600,
+    "n_stations_evaluated": 100,
+    "max_station_unit_forecasts": 100,
+    "csv_path": "C:\\Users\\aregk\\OneDrive\\Documents\\Areg Khachatryan\\AUA\\AUA 2025-2026 2\\Capstone\\Air Quality Capstone project\\results\\forecast_results_station_units_1h.csv",
+    "weighted_mean_mae_by_model": {
+      "Persistence": 8.787042939585003,
+      "AR(24)_frozen": 9.092388224739862,
+      "Ridge": 12.14600834291467,
+      "RandomForest": 14.652474020858044,
+      "XGBoost": 15.683913585624262,
+      "Seasonal_naive_24h": 24.51353304265703
+    }
+  },
+  "notes": {
+    "mlp_removed": true,
+    "deepar_planned": false,
+    "district_level_mode": "district_grouped_station_avg",
+    "tree_models_enabled": [
+      "RandomForest",
+      "XGBoost"
+    ],
+    "lightgbm_available": false,
+    "city_forecast_primary_csv": "forecast_results_1h.csv",
+    "district_unit_forecast_csv": "forecast_results_district_units_1h.csv",
+    "station_unit_forecast_csv": "forecast_results_station_units_1h.csv"
+  }
+}

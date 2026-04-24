@@ -175,15 +175,15 @@ Figure~\ref{fig:mae_horizon} summarizes test MAE across horizons. Persistence er
 \centering
 \fbox{\begin{minipage}{0.88\textwidth}
 \small\noindent
-\textbf{Figure placeholder.} The multi-horizon MAE plot is generated as \texttt{paper/figures/mae\_by\_horizon.png} by the forecasting script. To embed the PNG in PDF, load the \texttt{graphicx} package and use \texttt{\textbackslash includegraphics} with the path above (full \TeX{} graphics stack required).
+\textbf{Figure placeholder.} The multi-horizon MAE plot is written by the pipeline to \texttt{results/plots/mae\_by\_horizon.png}. To embed the PNG in PDF, load the \texttt{graphicx} package and use \texttt{\textbackslash includegraphics} with the path above (full \TeX{} graphics stack required).
 \end{minipage}}
-\caption{Test mean absolute error by forecast horizon (direct multi-step estimation for $h>1$). Source figure: \texttt{paper/figures/mae\_by\_horizon.png}.}
+\caption{Test mean absolute error by forecast horizon (direct multi-step estimation for $h>1$). Source figure: \texttt{results/plots/mae\_by\_horizon.png}.}
 \label{fig:mae_horizon}
 \end{figure}
 
 \subsection{Diagnostic figures}
 
-Scatterplots of predicted versus actual concentrations and residual series for the best-performing tree model are available in the repository under \texttt{paper/figures/}. Random forest impurity importance highlights lag and calendar structure; permutation importance would be a stronger interpretability tool for future revisions.
+Scatterplots of predicted versus actual concentrations and residual series for the best-performing tree model are available in the repository under \texttt{results/plots/} (e.g. \texttt{model\_performance\_1h\_ci.png}, \texttt{forecast\_vs\_actual\_best\_1h.png}). Random forest impurity importance highlights lag and calendar structure; permutation importance would be a stronger interpretability tool for future revisions.
 
 \section{Discussion}
 \label{sec:discussion}

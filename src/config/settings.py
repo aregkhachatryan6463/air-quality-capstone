@@ -14,6 +14,13 @@ class DataConfig:
     short_gap_max: int = 3
     medium_gap_max: int = 24
     station_metadata_path: Path | None = None
+    prefer_district_grouping: bool = True
+    # Per-unit 1h forecasts (same model family as city; no Hyperopt on units for speed)
+    run_district_unit_forecasts: bool = True
+    run_station_unit_forecasts: bool = True
+    district_unit_min_feature_rows: int = 1500
+    station_unit_min_feature_rows: int = 5000
+    max_station_unit_forecasts: int = 100
 
 
 @dataclass
@@ -83,7 +90,8 @@ class PipelineConfig:
             plots_dir=output_root / "plots",
             tables_dir=output_root / "tables",
             json_dir=output_root / "json",
-            images_dir=root / "images",
+            # Keep figures in one place with plots (avoid a separate project-level images/ tree)
+            images_dir=output_root / "plots",
         )
         data = DataConfig(data_root=root / "data" / "raw" / "Air Quality Data")
         return PipelineConfig(project_root=root, data=data, output=out)

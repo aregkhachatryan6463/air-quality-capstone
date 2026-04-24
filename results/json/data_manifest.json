@@ -1,0 +1,27 @@
+{
+  "date_min": "2019-02-01T00:00:00",
+  "date_max": "2026-01-31T23:00:00",
+  "n_rows_raw": 61368,
+  "n_rows_model_table": 61285,
+  "columns": [
+    "timestamp",
+    "avg_pm2.5",
+    "avg_pm10",
+    "avg_temperature",
+    "avg_pressure",
+    "avg_humidity",
+    "city_slug",
+    "series_id",
+    "imputation_flag_avg_pm2.5",
+    "long_gap_flag_avg_pm2.5",
+    "imputation_flag_avg_pm10",
+    "long_gap_flag_avg_pm10",
+    "imputation_flag_avg_temperature",
+    "long_gap_flag_avg_temperature",
+    "imputation_flag_avg_pressure",
+    "long_gap_flag_avg_pressure",
+    "imputation_flag_avg_humidity",
+    "long_gap_flag_avg_humidity",
+    "avg_pm2.5_raw"
+  ]
+}
