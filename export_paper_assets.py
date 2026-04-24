@@ -90,15 +90,25 @@ def bootstrap_mae_ci(
 
 def main() -> None:
     root = os.getcwd()
+    results_root = os.path.join(root, "results")
+    legacy_root = root
     paths = {
-        "main": os.path.join(root, "forecast_results_1h.csv"),
-        "horizon": os.path.join(root, "forecast_results_by_horizon.csv"),
-        "dm": os.path.join(root, "diebold_mariano_test.csv"),
+        "main": os.path.join(results_root, "forecast_results_1h.csv"),
+        "horizon": os.path.join(results_root, "forecast_results_by_horizon.csv"),
+        "dm": os.path.join(results_root, "diebold_mariano_test.csv"),
         "bundle": os.path.join(root, "paper", "bundle", "test_1h_predictions.npz"),
     }
+    legacy_paths = {
+        "main": os.path.join(legacy_root, "forecast_results_1h.csv"),
+        "horizon": os.path.join(legacy_root, "forecast_results_by_horizon.csv"),
+        "dm": os.path.join(legacy_root, "diebold_mariano_test.csv"),
+    }
+    for key in ("main", "horizon", "dm"):
+        if not os.path.isfile(paths[key]) and os.path.isfile(legacy_paths[key]):
+            paths[key] = legacy_paths[key]
     for key in ("main", "horizon", "dm"):
         if not os.path.isfile(paths[key]):
-            print(f"Missing {paths[key]} — run yerevan_pm25_forecasting.py first.", file=sys.stderr)
+            print(f"Missing {paths[key]} — run run_pipeline.py first.", file=sys.stderr)
             sys.exit(1)
 
     paper_root = os.path.join(root, "paper")

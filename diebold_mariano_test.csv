@@ -1,3 +1,0 @@
-comparison,DM,p_value_two_sided,n
-XGBoost_vs_Ridge_MAEloss,1.266445844455687,0.20535350653395268,9199.0
-XGBoost_vs_AR_MAEloss,-41.65166692434825,0.0,9198.0

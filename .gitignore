@@ -15,12 +15,15 @@ env/
 
 # Large data folder (exceeds GitHub file size limits; see DATA_README.md)
 Air Quality Data/
+data/raw/
+data/processed/*.csv
 
 # Local prediction archive (regenerate with: python yerevan_pm25_forecasting.py --paper)
 paper/bundle/
 
 # Supervisor review (keep local only)
 docs/CAPSTONE_SUPERVISOR_FEEDBACK.md.pdf
+other paper/
 
 # LaTeX build artifacts (manuscript/)
 manuscript/*.aux
@@ -29,4 +32,9 @@ manuscript/*.out
 manuscript/*.blg
 manuscript/*.bbl
 manuscript/*.synctex.gz
+
+# Generated pipeline outputs
+results/plots/
+results/tables/
+results/json/
 

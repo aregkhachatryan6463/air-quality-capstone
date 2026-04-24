@@ -1,15 +1,13 @@
 {
-  "generated_utc": "2026-03-21T13:45:23.698105+00:00",
+  "generated_utc": "2026-04-24T16:59:18.656303+00:00",
   "best_mae_model_1h": "AR(24)_frozen",
-  "best_mae_value_1h": 2.374966571663443,
-  "n_models_1h": 9,
+  "best_mae_value_1h": 2.409471600971972,
+  "n_models_1h": 6,
   "horizon_models": [
     "AR(24)_frozen",
-    "MLP",
     "Persistence",
     "RandomForest",
     "Ridge",
-    "Rolling_mean_24h",
     "Seasonal_naive_24h",
     "XGBoost"
   ],
