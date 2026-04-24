@@ -18,7 +18,7 @@ Air Quality Data/
 data/raw/
 data/processed/*.csv
 
-# Local prediction archive (regenerate with: python yerevan_pm25_forecasting.py --paper)
+# Local prediction archive (optional local artifact)
 paper/bundle/
 
 # Supervisor review (keep local only)
@@ -47,4 +47,6 @@ yerevan_pm25_forecasting.py
 results/plots/
 results/tables/
 results/json/
+figures_data_quality/
+paper/figures/
 
