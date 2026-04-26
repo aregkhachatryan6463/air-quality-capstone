@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 import os
+import shutil
 import sys
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
@@ -170,7 +171,7 @@ def main() -> None:
         f.write(
             df_to_latex_table(
                 df_dm_disp,
-                "Diebold--Mariano tests on test-set absolute errors (paired; HAC lag 1).",
+                "Diebold--Mariano tests on test-set absolute errors (paired; Newey--West--style HAC; lag rule in results JSON).",
                 "tab:dm",
                 floatfmt="%.6f",
             )
@@ -185,8 +186,56 @@ def main() -> None:
     if not df_hz.empty:
         summary["horizon_models"] = sorted(df_hz["model"].unique().tolist())
 
+    def _write_bootstrap_tex(rows: List[Dict[str, Any]]) -> None:
+        bdf = pd.DataFrame(rows)
+        bdf["interval"] = bdf.apply(
+            lambda r: f"[{r['ci_low']:.3f}, {r['ci_high']:.3f}]",
+            axis=1,
+        )
+        out_b = bdf[["model", "mae", "interval"]].copy()
+        out_b.columns = ["Model", "MAE", "95pct_CI_bootstrap"]
+        with open(os.path.join(tab_dir, "table_bootstrap_mae_ci.tex"), "w", encoding="utf-8") as f:
+            f.write(
+                df_to_latex_table(
+                    out_b,
+                    "Bootstrap 95% intervals for mean absolute error (test set; primary: circular block; see JSON for method).",
+                    "tab:bootstrap_mae",
+                    floatfmt="%.3f",
+                )
+            )
+
+    def _rows_from_results_summary_boot(obj: Any) -> List[Dict[str, Any]]:
+        """Coerce results_summary bootstrap block (list or dict) to list of {model, mae, ci_low, ci_high}."""
+        if obj is None:
+            return []
+        if isinstance(obj, list):
+            return [r for r in obj if isinstance(r, dict) and "model" in r]
+        if isinstance(obj, dict):
+            return [
+                {"model": k, **{kk: v[kk] for kk in ("mae", "ci_low", "ci_high") if kk in v}}
+                for k, v in obj.items()
+                if isinstance(v, dict)
+            ]
+        return []
+
+    json_summary_path = os.path.join(results_root, "json", "results_summary.json")
+    boot_from_json: Optional[Dict[str, Any]] = None
+    if os.path.isfile(json_summary_path):
+        with open(json_summary_path, encoding="utf-8") as f:
+            boot_from_json = json.load(f)
+
     boot_rows: List[Dict[str, Any]] = []
-    if os.path.isfile(paths["bundle"]):
+    if boot_from_json and "bootstrap_mae_95ci" in boot_from_json and isinstance(
+        boot_from_json["bootstrap_mae_95ci"], dict
+    ):
+        # Prefer the pipeline JSON (authoritative) over a legacy .npz bundle
+        br = _rows_from_results_summary_boot(boot_from_json["bootstrap_mae_95ci"])
+        boot_rows = sorted(
+            (r for r in br if "mae" in r and "ci_low" in r and "ci_high" in r),
+            key=lambda r: float(r.get("mae", 1e9)),
+        )
+        summary["bootstrap_mae_95ci"] = "from_results_json"
+    elif os.path.isfile(paths["bundle"]):
         z = np.load(paths["bundle"])
         y = z["y_test"]
         for name in sorted(z.files):
@@ -198,26 +247,20 @@ def main() -> None:
             bi = bootstrap_mae_ci(y, pred)
             boot_rows.append({"model": name, **bi})
         summary["bootstrap_mae_95ci"] = boot_rows
-        if boot_rows:
-            bdf = pd.DataFrame(boot_rows)
-            bdf["interval"] = bdf.apply(
-                lambda r: f"[{r['ci_low']:.3f}, {r['ci_high']:.3f}]",
-                axis=1,
-            )
-            out_b = bdf[["model", "mae", "interval"]].copy()
-            out_b.columns = ["Model", "MAE", "95pct_CI_bootstrap"]
-            with open(os.path.join(tab_dir, "table_bootstrap_mae_ci.tex"), "w", encoding="utf-8") as f:
-                f.write(
-                    df_to_latex_table(
-                        out_b,
-                        "Bootstrap 95\\% intervals for mean absolute error (test set; i.i.d. resampling of hours).",
-                        "tab:bootstrap_mae",
-                        floatfmt="%.3f",
-                    )
-                )
+    elif boot_from_json and "bootstrap_mae_95ci" in boot_from_json:
+        br = _rows_from_results_summary_boot(boot_from_json["bootstrap_mae_95ci"])
+        boot_rows = sorted(
+            (r for r in br if "mae" in r and "ci_low" in r and "ci_high" in r),
+            key=lambda r: float(r.get("mae", 1e9)),
+        )
+        summary["bootstrap_mae_95ci"] = "from_results_json_list"
     else:
         summary["bootstrap_mae_95ci"] = None
-        print("No prediction bundle found; bootstrap table skipped.", file=sys.stderr)
+
+    if boot_rows:
+        _write_bootstrap_tex(boot_rows)
+    else:
+        print("No prediction bundle and no bootstrap in results/json/results_summary.json; bootstrap table skipped.", file=sys.stderr)
 
     def _sanitize_json(x: Any) -> Any:
         if isinstance(x, dict):
@@ -231,7 +274,22 @@ def main() -> None:
     with open(os.path.join(paper_root, "results_summary.json"), "w", encoding="utf-8") as f:
         json.dump(_sanitize_json(summary), f, indent=2, allow_nan=False)
 
-    print(f"Wrote {tab_dir}/*.tex and paper/results_summary.json")
+    images_dir = os.path.join(root, "images")
+    os.makedirs(images_dir, exist_ok=True)
+    for name in (
+        "mae_by_horizon.png",
+        "model_performance_1h_ci.png",
+        "forecast_vs_actual_best_1h.png",
+        "walk_forward_mae_stability.png",
+        "walk_forward_mean_with_errorbars.png",
+        "spatial_level_comparison_mae.png",
+        "acf_pacf_train.png",
+    ):
+        src = os.path.join(results_root, "plots", name)
+        if os.path.isfile(src):
+            shutil.copy2(src, os.path.join(images_dir, name))
+
+    print(f"Wrote {tab_dir}/*.tex, paper/results_summary.json, and synced key figures to images/")
 
 
 if __name__ == "__main__":

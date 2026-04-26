@@ -32,7 +32,7 @@ Areg Khachatryan\\[0.5em]
 \maketitle
 
 \begin{abstract}
-Fine particulate matter (PM\textsubscript{2.5}) is a leading environmental risk factor for morbidity and mortality in urban areas. This study compares statistical and machine learning approaches for \emph{short-term} (one- to four-hour ahead) forecasting of hourly city-average PM\textsubscript{2.5} in Yerevan, Armenia, using open data from the national air quality network. After aligning observations to a regular hourly grid and applying transparent imputation, we train a common feature representation with strictly chronological train, validation, and test splits. Baselines include persistence, seasonal naive, and rolling means; classical models include an autoregressive specification with coefficients frozen at the training sample; supervised learners include ridge regression, random forests, multilayer perceptrons, and gradient-boosted trees. Forecasts are evaluated with mean absolute error, root mean squared error, and $R^2$ on a held-out test window spanning more than twelve months. Uncertainty is quantified with bootstrap confidence intervals for mean absolute error and Diebold--Mariano tests for equal predictive accuracy using absolute loss. On the empirical test sample, a frozen AR(24) specification achieves the lowest mean absolute error among all models considered, and differences between the strongest tree-based methods and ridge regression are not statistically significant at conventional levels. These findings illustrate that, for this dataset and evaluation protocol, relatively simple linear dynamics combined with careful leakage control can match or exceed the accuracy of more flexible machine learning pipelines, and that claims of superiority require joint statistical evidence rather than point metrics alone. The full analysis is reproducible from the accompanying code repository.
+Fine particulate matter (PM\textsubscript{2.5}) is a leading environmental risk factor for morbidity and mortality in urban areas. This study addresses \emph{when} parsimonious time-series models (AR / SARIMA) versus machine learning (ensembles, DeepAR) are appropriate for \emph{short-term} (one- to four-hour) hourly PM\textsubscript{2.5} forecasting in Yerevan, Armenia, and how conclusions depend on spatial aggregation (city mean vs administrative districts vs station-level samples) and on temporal stability. After aligning data to a regular grid and controlled imputation (with optional sensitivity to medium-gap policy), we use leakage-safe features including lags, rolling moments, and calendar encodings, with strict chronological train/validation/test splits. \emph{Walk-forward} evaluation (primary interpretive frame) reports mean error and across-fold variance for a common model zoo, including SARIMA in each fold. Point metrics on a single test window are complemented by circular \emph{block} bootstrap CIs for MAE and Diebold--Mariano tests with a data-driven HAC lag. A deep probabilistic DeepAR path reports 90\% coverage and a Winkler score for interval quality. A recent AUA capstone monograph on air quality in Yerevan \citep{auaair2025yerevan} offers useful local context; the present work extends the empirical record with a fully specified ML pipeline, spatial analysis, and robust validation. The repository is reproducible.
 \end{abstract}
 
 \noindent\textbf{Keywords:} air quality; PM\textsubscript{2.5}; time series forecasting; Diebold--Mariano test; machine learning; Yerevan
@@ -43,14 +43,14 @@ Ambient PM\textsubscript{2.5} concentrations are associated with cardiovascular 
 
 Forecasting PM\textsubscript{2.5} at hourly resolution is challenging because concentrations are persistent, seasonal, and driven by nonlinear interactions between emissions and weather. A substantial literature applies machine learning (ML) and deep learning to air quality prediction \citep{shao2020predictions}, often reporting impressive accuracy. At the same time, classical time-series models remain standard benchmarks \citep{box2015time,hyndman2021forecasting}, and comparative studies must guard against information leakage, overfitting to a single temporal split, and overinterpretation of point estimates without uncertainty.
 
-This paper addresses the following research question: \emph{For hourly PM\textsubscript{2.5} in Yerevan, how do transparent baselines, a carefully specified linear autoregressive benchmark, and mainstream ML models compare under a strict chronological evaluation protocol, and when can we claim that one model is significantly more accurate than another?} We emphasize reproducibility: frozen coefficients for autoregressive forecasts, explicit calendar ranges for train/validation/test, paired Diebold--Mariano tests \citep{diebold1995comparing,harvey1997testing}, and bootstrap intervals for mean absolute error (MAE).
+We study four interlinked questions: (1) \emph{When} do linear autoregressive and seasonal (SARIMA) models outperform feature-rich ML? (2) How does \emph{spatial aggregation} (city, district, station) change model rankings? (3) Do tuned boosting and DeepAR alter qualitative conclusions? (4) Are differences \emph{stable over time} under walk-forward validation? We emphasize reproducibility: frozen AR coefficients, explicit split dates, block bootstrap and HAC-consistent Diebold--Mariano tests \citep{diebold1995comparing,harvey1997testing}, and code-level leakage control for new features.
 
 \paragraph{Contributions.}
 \begin{itemize}
-  \item We implement an end-to-end hourly pipeline for Yerevan city-average PM\textsubscript{2.5} with documented preprocessing, feature construction, and evaluation.
-  \item We compare baselines, a frozen AR($p$) benchmark, penalized linear models, random forests \citep{breiman2001random}, gradient boosting \citep{chen2016xgboost}, and neural networks under identical splits.
-  \item We report multi-horizon performance using a \emph{direct} multi-step strategy \citep{marcellino2006comparison} and discuss its implications relative to recursive approaches.
-  \item We interpret accuracy differences using bootstrap MAE intervals and Diebold--Mariano tests, avoiding ``leaderboard'' claims unsupported by uncertainty.
+  \item We implement a modular pipeline: controlled imputation audit, past-only lags, rolling features, and optional spatial re-aggregation to districts (metadata-based or, if needed, data-driven $k$).
+  \item We compare baselines, frozen AR(24), auto-SARIMA, Ridge, and gradient-boosted trees with Hyperopt, plus optional DeepAR with probabilistic metrics.
+  \item \emph{Walk-forward} (expanding) evaluation with SARIMA in each fold and fold-wise error variance is the primary basis for ``stability'' claims, alongside a single hold-out for headline tables.
+  \item We contrast city vs district \emph{vs} station-level weighted errors; permutation importance and train-set ACF/PACF help explain why linear dynamics can dominate.
 \end{itemize}
 
 \subsection{Institutional context and open data}
@@ -65,7 +65,7 @@ Section~\ref{sec:related} reviews forecasting evaluation and ML applications in 
 \label{sec:related}
 
 \paragraph{Forecast comparison and inference.}
-\citet{diebold1995comparing} formalized tests for equal forecast accuracy; finite-sample adjustments and loss differentials are discussed by \citet{harvey1997testing}. In this project, we implement a Diebold--Mariano statistic with a heteroskedasticity- and autocorrelation-consistent variance estimate with one lag, paired with absolute-error loss, which aligns with MAE-oriented reporting.
+\citet{diebold1995comparing} formalized tests for equal forecast accuracy; finite-sample adjustments and loss differentials are discussed by \citet{harvey1997testing}. We follow a long-run HAC variance for the mean loss differential (Bartlett--weighted autocovariances) with a lag order tied to the forecast horizon and a Newey--West-style rule, reported alongside each test.
 
 \paragraph{Time-series and machine learning for air quality.}
 Surveys highlight the diversity of ML approaches applied to PM\textsubscript{2.5} forecasting, from shallow learners to deep networks \citep{shao2020predictions}. Classical ARIMA/SARIMA models remain common benchmarks because they encode smooth persistence and seasonality \citep{box2015time}. \citet{hyndman2021forecasting} provide accessible treatment of seasonal models, cross-validation for series, and forecast evaluation.
@@ -73,8 +73,11 @@ Surveys highlight the diversity of ML approaches applied to PM\textsubscript{2.5
 \paragraph{Direct versus iterated multi-step forecasting.}
 \citet{marcellino2006comparison} compare direct and iterated multistep autoregressive forecasts; direct methods estimate separate models for each horizon, whereas iterated methods chain one-step models. We employ direct multi-step estimation for horizons $h\in\{1,2,3,4\}$ hours for supervised models, which trades off model proliferation against simpler error propagation.
 
+\paragraph{Local comparators.}
+The AUA CSE monograph on air quality in Yerevan \citep{auaair2025yerevan} situates PM\textsubscript{2.5} sources, health context, and monitoring. Our contribution is methodological (forecasting protocol, feature audit, and spatial robustness) using an updated hourly panel; readers should not equate the two works' modeling targets or data vintages.
+
 \paragraph{Interpretability.}
-Tree ensembles admit feature importance measures; impurity-based importance can be biased toward high-cardinality features, and permutation-based alternatives are often preferred \citep{lundberg2017unified}. We report random-forest impurity importance as an exploratory diagnostic while noting this limitation.
+We complement accuracy tables with train-segment ACF/PACF plots, permutation-based importance for tuned XGBoost on a held test slice, and a district/station error comparison where sample sizes allow; impurity importances are \emph{not} primary \citep{lundberg2017unified}.
 
 \section{Data and study area}
 \label{sec:data}
@@ -85,7 +88,7 @@ We use open hourly air quality data for Yerevan distributed through the project 
 
 \subsection{Data quality and imputation}
 
-Real sensors exhibit downtime, calibration drift, and extreme spikes. Following common practice in applied forecasting, we forward-fill missing numeric values along time and then back-fill remaining leading gaps so that lag features can be constructed on a complete grid. This choice can smooth true volatility and mechanically reduce apparent forecast error if gaps cluster on high-pollution episodes; we therefore treat missingness as a first-class reporting issue. Complementary diagnostics (missingness heatmaps by year and month, counts of observed versus imputed hours, stationarity tests, and a time-series plot highlighting the COVID-19 period) are produced by \texttt{data\_quality\_supplement.py} and should be summarized descriptively in empirical revisions of this draft.
+Real sensors exhibit downtime, calibration drift, and extreme spikes. The main pipeline uses \emph{controlled} imputation: very short runs of missing hours are filled with local temporal interpolation; longer medium-length gaps use hour-of-day medians; very long gaps are left missing where uncertainty is high, with binary flags for downstream use. A limited ffill/bfill (with a short cap) is applied only as a last resort for remaining covariate holes. This policy avoids naive forward-filling across large multi-day gaps. Missingness is audited (fractions, gap lengths, monthly patterns) and summarized in \texttt{results/json/results\_summary.json}. Complementary exploratory diagnostics (heatmaps, stationarity checks) can be generated with \texttt{scripts/data\_quality\_supplement.py} and should be summarized descriptively in revisions of this draft; that script uses a simpler fill for exploration and should not be confused with the main pipeline’s imputation module.
 
 From a modeling standpoint, missingness in winter months may be \emph{not missing at random} if instrument outages correlate with extreme cold or maintenance schedules; we do not claim a formal MAR/MNAR identification result, but we flag the risk that imputation can bias performance toward optimistic values during problematic periods.
 
@@ -93,15 +96,15 @@ From a modeling standpoint, missingness in winter months may be \emph{not missin
 
 We use a single chronological split with proportions 70\%/15\%/15\% of usable rows after listwise deletion of rows with missing targets or features. Validation is reserved for descriptive monitoring; the main results concern the \emph{test} period.
 
-For the replication run underlying the tables in this manuscript, calendar ranges are as follows (ISO timestamps, local alignment as in the source data):
+For the replication run underlying the tables in this manuscript, split boundaries and row counts match \texttt{results/json/split\_info.json} (also embedded in \texttt{results\_summary.json}). Ranges are as follows (from the last pipeline run):
 \begin{itemize}
-  \item Training: 2019-02-02 00:00 through 2023-12-26 13:00 (42{,}926 hourly rows).
-  \item Validation: 2023-12-26 14:00 through 2025-01-12 19:00 (9{,}198 rows).
-  \item Test: 2025-01-12 20:00 through 2026-01-31 02:00 (9{,}199 rows).
+  \item Training: 2019-02-02 00:00 through 2023-12-27 20:00 (42{,}899 hourly rows in the model table).
+  \item Validation: 2023-12-27 21:00 through 2025-01-13 21:00 (9{,}193 rows).
+  \item Test: 2025-01-13 22:00 through 2026-01-31 22:00 (9{,}193 rows).
 \end{itemize}
 The test interval spans more than twelve months and includes at least one full heating season (October--April in the Northern Hemisphere), which matters for PM\textsubscript{2.5} dynamics in Yerevan.
 
-A single hold-out is efficient for large hourly panels but does not average over multiple non-overlapping evaluation windows. Expanding-window walk-forward evaluation is a natural extension \citep{hyndman2021forecasting}; we discuss this as future work in Section~\ref{sec:limitations}.
+A single hold-out is efficient for large hourly panels but does not average over multiple non-overlapping evaluation windows. The code implements an \emph{expanding} walk forward with a configurable test window and step, refitting a common zoo each fold. By default, SARIMA (auto order on each training segment) and linear baselines are included; gradient-boosted parameters can either be re-tuned per fold (``expensive'' option) or reuse validation-tuned values from the main 70/15/15 run (default). Per-fold DeepAR retraining is optional. Fold-wise means and variances, and a comparison table against the chronological test split, are in \texttt{results/tables/}.
 
 \section{Methodology}
 \label{sec:methods}
@@ -112,7 +115,7 @@ We optionally cap extreme PM\textsubscript{2.5} values at a high quantile (main 
 
 \subsection{Features}
 
-The supervised models use PM\textsubscript{2.5} lags at 1, 2, 3, and 24 hours; calendar features (hour, day-of-week, month); a binary \emph{heating season} indicator (October--December and January--April) reflecting residential heating in Yerevan; and optional meteorology when column completeness exceeds a threshold. The heating-season indicator encodes domain knowledge that is not automatically discovered by generic smoothers.
+The supervised models use a configurable set of \emph{strictly past} target lags, trailing rolling means/std/min/max, optional trigonometric seasonality (diurnal/annual), hour-of-day--lag interactions with met covariates when available, and short-horizon volatility (differences, trailing variance). Calendar features and a \emph{heating season} indicator (October--December, January--April) encode domain knowledge. All rolling statistics use a one-hour shift from the target hour to avoid look-ahead.
 
 \subsection{Models}
 
@@ -126,7 +129,7 @@ We estimate an AR($p$) model with intercept on the \emph{training} segment only 
 The replication code also supports a seasonal SARIMA/SARIMAX-style benchmark with seasonal period 24 hours and order selection on the training sample; rolling one-step forecasts follow the same chronological principle as the AR benchmark. If enabled in the run, its performance appears alongside other models in the CSV outputs; the tables excerpted here focus on the models listed in Table~\ref{tab:main_results}.
 
 \paragraph{Supervised learning.}
-Ordinary least squares is included for reference; ridge regression uses $\alpha=1$ with a stable solver. Random forests use 100 trees with maximum depth 10. XGBoost uses 100 trees, maximum depth 6, learning rate 0.1, and a fixed random seed. The multilayer perceptron is a scikit-learn \texttt{MLPRegressor} with hidden layers $(64,32)$, ReLU activations, early stopping with 10\% internal validation split, and capped iterations---a modest neural baseline rather than a heavily tuned deep model.
+Ridge regression uses $\alpha=1$ with a stable solver. Default random forests, XGBoost, and LightGBM follow the repository’s baseline settings. Tree models can be tuned on the \emph{validation} window using Hyperopt (Tree-structured Parzen estimators) with mean absolute error as the inner objective; tuned parameters are reported in \texttt{results\_summary.json} and model names use a \texttt{\_tuned} suffix. The multilayer perceptron was removed from the active pipeline in favor of a clearer benchmark set and optional DeepAR for deep learning; older tables that list an MLP should be regenerated.
 
 \subsection{Multi-horizon forecasting}
 
@@ -157,33 +160,40 @@ Table~\ref{tab:main_results} reports test-set performance for the one-hour horiz
 
 \subsection{Uncertainty: bootstrap intervals}
 
-Table~\ref{tab:bootstrap_mae} summarizes bootstrap 95\% intervals for MAE. Intervals for AR(24) and persistence do not overlap those for ridge, random forest, MLP, or XGBoost on this test sample, suggesting materially lower average absolute error for the two simpler benchmarks relative to these ML implementations under the present tuning and feature sets.
+Table~\ref{tab:bootstrap_mae} summarizes bootstrap 95\% intervals for MAE. When the reported pattern is as in the table, intervals for AR(24) and persistence can sit well below those of ridge, random forest, and XGBoost (and LightGBM, when that model is included in the run). Regenerate the table with \texttt{export\_paper\_assets.py} after each full pipeline run so the TeX matches \texttt{results/json/results\_summary.json}.
 
 \input{../paper/tables/table_bootstrap_mae_ci.tex}
 
 \subsection{Diebold--Mariano tests}
 
-The pipeline compares the better of random forest versus XGBoost (here: XGBoost, which attains lower MAE than random forest) against ridge regression and against the frozen AR(24) benchmark on the test sample. For the replication summarized in \texttt{diebold\_mariano\_test.csv}, with $n=9{,}199$ paired test hours for the XGBoost--ridge comparison, the Diebold--Mariano statistic for absolute loss is approximately $1.27$ with a two-sided $p$-value of $0.21$. We therefore \emph{do not} reject equal predictive accuracy between XGBoost and ridge at the 5\% level: the evidence is insufficient to claim that either model is more accurate than the other under this test and loss function.
+The pipeline writes paired tests to \texttt{results/tables/diebold\_mariano\_test.csv}. The default reporting rule keeps a small set of comparisons (e.g., best model versus the second-ranked model and selected linear benchmarks) to limit multiplicity. For the replication summarized in the exported CSV with AR(24)\_frozen as the best one-step model, examples include: AR(24)\_frozen versus persistence (larger $|\mathrm{DM}|$ under absolute loss) and AR(24)\_frozen versus ridge, with $n$ equal to the number of valid paired test hours. Exact $z$-style statistics and two-sided $p$-values in that file should be cited in place of any older narrative tied to a different best model (e.g.\ XGBoost--ridge) from an earlier run.
 
-For XGBoost versus AR(24), the statistic is approximately $-41.65$ with an effective sample size of $9{,}198$ finite AR forecasts; the two-sided $p$-value is essentially zero under the normal approximation. The sign and magnitude are consistent with materially smaller absolute errors for AR(24) relative to XGBoost on this test period. In narrative terms, the classical benchmark is not merely competitive; it substantially outperforms the tuned tree ensemble on average absolute error, and this difference is statistically discernible under the reported test.
+When AR(24) is best, a typical pattern is that differences against persistence and Ridge favor AR(24) on absolute error at conventional significance; consult the current CSV and \texttt{results\_summary.json} for numbers after each run.
 
 \subsection{Multi-horizon behavior}
 
-Figure~\ref{fig:mae_horizon} summarizes test MAE across horizons. Persistence errors grow with horizon as expected; supervised models remain clustered, with neural and tree models trading ranks depending on $h$. Readers should interpret multi-horizon results with the same caution about a single temporal split.
+Figure~\ref{fig:mae_horizon} summarizes test MAE across horizons. Persistence errors grow with horizon as expected; supervised models remain clustered, with tree and linear models trading ranks depending on $h$. Readers should interpret multi-horizon results with the same caution about a single temporal split.
 
 \begin{figure}[t]
 \centering
-\fbox{\begin{minipage}{0.88\textwidth}
-\small\noindent
-\textbf{Figure placeholder.} The multi-horizon MAE plot is written by the pipeline to \texttt{results/plots/mae\_by\_horizon.png}. To embed the PNG in PDF, load the \texttt{graphicx} package and use \texttt{\textbackslash includegraphics} with the path above (full \TeX{} graphics stack required).
-\end{minipage}}
-\caption{Test mean absolute error by forecast horizon (direct multi-step estimation for $h>1$). Source figure: \texttt{results/plots/mae\_by\_horizon.png}.}
+% pdfTeX: avoids loading graphicx on installs missing grfext. Full TeX~Live users may switch to \texttt{\textbackslash includegraphics}.
+\IfFileExists{../images/mae_by_horizon.png}{%
+\pdfximage width 0.92\linewidth {../images/mae_by_horizon.png}\pdfrefximage\pdflastximage
+}{%
+  \fbox{\parbox{0.92\linewidth}{\small\noindent
+  \textbf{Figure.} Place \texttt{../images/mae\_by\_horizon.png} here (run \texttt{run\_pipeline.py} and \texttt{export\_paper\_assets.py}).}}
+}
+\caption{Test mean absolute error by forecast horizon (direct multi-step, subset of models). File \texttt{images/mae\_by\_horizon.png} (or \texttt{results/plots/}).}
 \label{fig:mae_horizon}
 \end{figure}
 
+\subsection{Chronological test versus walk-forward (auxiliary)}
+
+In addition to the main test window, the code runs an expanding walk-forward design on a subset of one-step models and writes \texttt{results/tables/validation\_chronological\_vs\_walkforward\_1h.csv}, with a parallel block in \texttt{results\_summary.json}. The intent is a \emph{stability} check, not a second identically defined leaderboard.
+
 \subsection{Diagnostic figures}
 
-Scatterplots of predicted versus actual concentrations and residual series for the best-performing tree model are available in the repository under \texttt{results/plots/} (e.g. \texttt{model\_performance\_1h\_ci.png}, \texttt{forecast\_vs\_actual\_best\_1h.png}). Random forest impurity importance highlights lag and calendar structure; permutation importance would be a stronger interpretability tool for future revisions.
+Time-series and bar plots for the best one-step model on the test set (e.g.\ \texttt{model\_performance\_1h\_ci.png}, \texttt{forecast\_vs\_actual\_best\_1h.png}) live under \texttt{results/plots/} and \texttt{images/}. For tree models, impurity-based importance (when saved) should be read alongside permutation-based alternatives in future work \citep{lundberg2017unified}.
 
 \section{Discussion}
 \label{sec:discussion}
@@ -200,9 +210,10 @@ Comparisons to literature values must respect differences in stations, horizons,
 \label{sec:limitations}
 
 \begin{itemize}
-  \item \textbf{Single hold-out.} One chronological split may favor some models by chance; walk-forward or blocked cross-validation would strengthen external validity.
-  \item \textbf{Imputation.} Forward and backward filling can underestimate volatility and obscure data problems; results are conditional on this preprocessing choice.
-  \item \textbf{Neural baseline.} The MLP is a modest sklearn architecture, not a state-of-the-art deep temporal model; it serves as a controlled baseline rather than a frontier benchmark.
+  \item \textbf{Single hold-out.} The primary comparison uses one chronological test window; walk-forward error is an auxiliary stability check, not a second independent test of all models.
+  \item \textbf{Imputation.} Results are conditional on the short-, medium-, and long-gap imputation policy; the supplement script uses a different fill for exploration only.
+  \item \textbf{Deep and deep probabilistic baselines.} Optional DeepAR is included when dependencies are available; 90\% interval coverage, when reported, is a descriptive check, not a formal calibration test.
+  \item \textbf{Walk-forward scope.} Default walk-forward refits a subset of models; hyperparameters for tuned trees are from the main validation search, not refit per fold.
   \item \textbf{Bootstrap.} Hourly errors are serially dependent; i.i.d.\ bootstrap intervals are optimistic for simultaneous inference.
   \item \textbf{Causal interpretation.} Forecast accuracy does not identify causal effects of policies or interventions.
 \end{itemize}
@@ -212,7 +223,7 @@ Comparisons to literature values must respect differences in stations, horizons,
 
 We presented a transparent, reproducible comparison of statistical and machine learning models for short-term PM\textsubscript{2.5} forecasting in Yerevan. Under a strict chronological protocol with frozen autoregressive coefficients and paired statistical tests, a classical AR(24) benchmark delivered the best average absolute accuracy on the held-out test window, and differences between ridge and gradient boosting were not statistically significant at the 5\% level. These results caution against inferring ML superiority from point metrics alone and motivate reporting uncertainty and stronger validation designs in air quality forecasting work.
 
-Future work includes walk-forward validation, permutation-based feature importance, optional structural-break robustness around the COVID-19 period, and archiving a frozen dataset snapshot with a permanent DOI for full reproducibility.
+Future work includes nested hyperparameter control under walk-forward, permutation-based feature importance, optional structural-break robustness around the COVID-19 period, and archiving a frozen dataset snapshot with a permanent DOI for full reproducibility.
 
 \appendix
 
@@ -236,10 +247,11 @@ Calendar & hour, day-of-week, month \\
 Heating season & October--December and January--April indicator \\
 Ridge & $\alpha = 1$, least-squares solver \texttt{lsqr} \\
 Random forest & 100 trees, max depth 10, \texttt{random\_state=42} \\
-XGBoost & 100 estimators, max depth 6, $\eta=0.1$, \texttt{random\_state=42} \\
-MLP & Hidden $(64,32)$, ReLU, early stopping, 10\% internal validation \\
+XGBoost & 100 estimators, max depth 6, $\eta=0.1$, \texttt{random\_state=42} (defaults; tuned values in JSON) \\
+LightGBM & See repository defaults; Hyperopt can override (JSON) \\
 AR benchmark & AR(24) with intercept, coefficients frozen after train fit \\
 SARIMA (optional) & Order search via information criteria on train sample only \\
+Tree tuning (optional) & Hyperopt (TPE), MAE on validation, max evals in config \\
 \bottomrule
 \end{tabular}
 \end{table}

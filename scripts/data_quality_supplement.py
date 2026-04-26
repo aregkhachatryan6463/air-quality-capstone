@@ -9,7 +9,7 @@ Produces saved figures (no interactive display):
 
 Run from project root after ``python download_data.py``:
 
-    python data_quality_supplement.py
+    python scripts/data_quality_supplement.py
 """
 
 from __future__ import annotations
