@@ -8,14 +8,15 @@ Areg Khachatryan · Rafayel Shirakyan (Supervisor)
 
 - `data/raw/` - downloaded source data
 - `data/processed/` - reusable processed feature tables
-- `src/download/` - modular data fetching
+- `download_data.py` - single source of truth for dataset download
+- `src/download/` - lightweight package namespace (no duplicate downloader logic)
 - `src/preprocessing/` - loading, missingness audits, imputation
 - `src/features/` - feature and target engineering
 - `src/models/` - ARIMA/SARIMA, tree models, LightGBM, DeepAR adapter, district clustering
 - `src/evaluation/` - metrics, statistical tests, validation schemes
 - `src/pipeline/` - orchestration logic
-- `results/` - generated outputs only: **`results/plots/`** (all figures), **`results/tables/`** (all CSVs), **`results/json/`** (summaries). See `results/README.md`.
-- `images/` - optional copies of key figures for the thesis / LaTeX (mirrored from `results/plots/` on each run and by `export_paper_assets.py`). See `images/README.md`.
+- `results/` - generated outputs only (kept local, gitignored by default): **`results/plots/`**, **`results/tables/`**, **`results/json/`**. See `results/README.md`.
+- `images/` - optional local mirrored PNGs for thesis / LaTeX previews (gitignored except `images/README.md`).
 - `notebooks/` - optional interactive exploration; pipeline entrypoint is `run_pipeline.py` (see `notebooks/README.md`).
 - `scripts/` - optional utilities (e.g. `data_quality_supplement.py`). See `scripts/README.md`.
 - `figures_data_quality/` - supplementary quality-audit outputs

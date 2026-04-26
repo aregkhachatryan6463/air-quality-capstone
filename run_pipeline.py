@@ -3,8 +3,8 @@ from __future__ import annotations
 import argparse
 import os
 
+from download_data import download_data
 from src.config.settings import PipelineConfig
-from src.download.fetch import ensure_data
 from src.pipeline.run import run_full_pipeline
 
 
@@ -68,7 +68,7 @@ def main() -> None:
     if args.walk_forward_sarima_search:
         cfg.validation.walk_forward_reuse_main_sarima_orders = False
     if not args.skip_download:
-        ensure_data(cfg.project_root)
+        download_data(target_dir=str(cfg.project_root / "data" / "raw" / "Air Quality Data"))
     print("Starting full pipeline (tuning, SARIMA, walk-forward, DeepAR per config; may take 30–90+ min)...", flush=True)
     result = run_full_pipeline(cfg, enable_tuning=not args.no_tuning)
     print("Done.", flush=True)
