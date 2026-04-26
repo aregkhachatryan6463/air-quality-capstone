@@ -1,20 +1,18 @@
 \begin{table}[t]
 \centering
 \small
-\caption{Bootstrap 95\\% intervals for mean absolute error (test set; i.i.d. resampling of hours).}
+\caption{Bootstrap 95\% intervals for mean absolute error (test set; i.i.d. resampling of hours).}
 \label{tab:bootstrap_mae}
 \begin{tabular}{lrr}
 \toprule
 Model & MAE & 95pct\_CI\_bootstrap \\
 \midrule
-AR & 2.375 & [2.306, 2.448] \\
-MLP & 5.627 & [5.519, 5.740] \\
-Persistence & 2.738 & [2.653, 2.824] \\
-RandomForest & 5.265 & [5.162, 5.379] \\
-Ridge & 5.096 & [4.974, 5.214] \\
-Rolling\_mean & 7.225 & [7.004, 7.438] \\
-Seasonal\_naive & 9.168 & [8.883, 9.451] \\
-XGBoost & 5.021 & [4.916, 5.134] \\
+AR(24)\_frozen & 2.412 & [2.338, 2.491] \\
+Persistence & 2.747 & [2.664, 2.830] \\
+XGBoost & 4.833 & [4.722, 4.944] \\
+Ridge & 4.994 & [4.882, 5.108] \\
+RandomForest & 4.996 & [4.886, 5.102] \\
+Seasonal\_naive\_24h & 9.253 & [8.980, 9.554] \\
 \bottomrule
 \end{tabular}
 \end{table}

@@ -15,6 +15,9 @@ Areg Khachatryan · Rafayel Shirakyan (Supervisor)
 - `src/evaluation/` - metrics, statistical tests, validation schemes
 - `src/pipeline/` - orchestration logic
 - `results/` - generated outputs only: **`results/plots/`** (all figures), **`results/tables/`** (all CSVs), **`results/json/`** (summaries). See `results/README.md`.
+- `images/` - optional copies of key figures for the thesis / LaTeX (mirrored from `results/plots/` on each run and by `export_paper_assets.py`). See `images/README.md`.
+- `notebooks/` - optional interactive exploration; pipeline entrypoint is `run_pipeline.py` (see `notebooks/README.md`).
+- `scripts/` - optional utilities (e.g. `data_quality_supplement.py`). See `scripts/README.md`.
 - `figures_data_quality/` - supplementary quality-audit outputs
 - `docs/` - methodology and project notes
 - `manuscript/` - paper source (`main.tex`, bibliography)

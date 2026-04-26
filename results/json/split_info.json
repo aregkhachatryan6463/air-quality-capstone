@@ -1,17 +1,17 @@
 {
   "train": {
-    "timestamp_min": "2019-02-02T00:00:00",
-    "timestamp_max": "2023-12-27T20:00:00",
-    "n_rows": 42899
+    "timestamp_min": "2019-02-04T00:00:00",
+    "timestamp_max": "2023-12-29T01:00:00",
+    "n_rows": 42832
   },
   "val": {
-    "timestamp_min": "2023-12-27T21:00:00",
-    "timestamp_max": "2025-01-13T21:00:00",
-    "n_rows": 9193
+    "timestamp_min": "2023-12-29T02:00:00",
+    "timestamp_max": "2025-01-14T11:00:00",
+    "n_rows": 9178
   },
   "test": {
-    "timestamp_min": "2025-01-13T22:00:00",
+    "timestamp_min": "2025-01-14T12:00:00",
     "timestamp_max": "2026-01-31T22:00:00",
-    "n_rows": 9193
+    "n_rows": 9179
   }
 }

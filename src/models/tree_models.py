@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import warnings
 from typing import Any
 
 import numpy as np
@@ -7,6 +8,29 @@ from sklearn.ensemble import RandomForestRegressor
 from xgboost import XGBRegressor
 
 from src.evaluation.metrics import regression_metrics
+
+_LGBM_IMPORT_TRIED = False
+_LGBM_REGRESSOR = None
+_LGBM_IMPORT_ERROR: Exception | None = None
+_LGBM_WARNED = False
+
+
+def _get_lgbm_regressor():
+    global _LGBM_IMPORT_TRIED, _LGBM_REGRESSOR, _LGBM_IMPORT_ERROR
+    if _LGBM_IMPORT_TRIED:
+        if _LGBM_REGRESSOR is None:
+            raise RuntimeError(f"{_LGBM_IMPORT_ERROR}")
+        return _LGBM_REGRESSOR
+    _LGBM_IMPORT_TRIED = True
+    try:
+        from lightgbm import LGBMRegressor  # type: ignore
+
+        _LGBM_REGRESSOR = LGBMRegressor
+        return _LGBM_REGRESSOR
+    except Exception as ex:  # noqa: BLE001
+        _LGBM_IMPORT_ERROR = ex
+        _LGBM_REGRESSOR = None
+        raise
 
 
 def make_tree_model(model_name: str, *, random_state: int = 42, params: dict[str, Any] | None = None):
@@ -16,8 +40,7 @@ def make_tree_model(model_name: str, *, random_state: int = 42, params: dict[str
     if model_name == "XGBoost":
         return XGBRegressor(random_state=random_state, n_jobs=-1, **p)
     if model_name == "LightGBM":
-        from lightgbm import LGBMRegressor
-
+        LGBMRegressor = _get_lgbm_regressor()
         return LGBMRegressor(random_state=random_state, **p)
     raise ValueError(model_name)
 
@@ -42,7 +65,11 @@ def build_baseline_models(random_state: int = 42) -> dict[str, Any]:
             random_state=random_state,
             params={"n_estimators": 200, "learning_rate": 0.05, "max_depth": -1},
         )
-    except Exception:
+    except Exception as ex:  # noqa: BLE001
+        global _LGBM_WARNED
+        if not _LGBM_WARNED:
+            warnings.warn(f"LightGBM not available, continuing without it: {ex!s}", stacklevel=2)
+            _LGBM_WARNED = True
         return models
     return models
 
@@ -88,7 +115,7 @@ def tune_hyperopt(
     from hyperopt import STATUS_OK, Trials, fmin, tpe
     LGBMRegressor = None
     if model_name == "LightGBM":
-        from lightgbm import LGBMRegressor
+        LGBMRegressor = _get_lgbm_regressor()
 
     space = _space_for(model_name)
 

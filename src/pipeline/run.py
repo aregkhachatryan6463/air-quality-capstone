@@ -12,9 +12,15 @@ from sklearn.linear_model import Ridge
 
 from src.config.settings import PipelineConfig
 from src.evaluation.metrics import regression_metrics
-from src.evaluation.stats_tests import bootstrap_mae_ci, diebold_mariano
+from src.evaluation.stats_tests import (
+    bootstrap_mae_ci,
+    bootstrap_mae_ci_block,
+    diebold_mariano,
+)
 from src.evaluation.validation import chronological_split, walk_forward_slices
 from src.features.build_features import build_feature_table
+from src.models.deepar_model import train_predict_deepar, winkler_score
+from src.pipeline.interpretation import save_acf_pacf_plot, save_permutation_importance_csv
 from src.models.arima_family import (
     frozen_ar_h_step_from_origins,
     frozen_ar_one_step,
@@ -22,7 +28,6 @@ from src.models.arima_family import (
     sarima_rolling_one_step,
 )
 from src.models.clustering import YEREVAN_DISTRICT_ORDER, build_district_mapping
-from src.models.deepar_model import train_predict_deepar
 from src.models.tree_models import build_baseline_models, make_tree_model, tune_hyperopt
 from src.preprocessing.imputation import controlled_impute
 from src.preprocessing.load import (
@@ -48,18 +53,32 @@ def _save_summary(path: Path, payload: dict[str, Any]) -> None:
 
 
 def _model_palette(models: list[str]) -> dict[str, str]:
+    # ColorBrewer Dark2-inspired + distinct grays; tuned models reuse base model hue
     base = {
-        "Persistence": "#1F77B4",
-        "Seasonal_naive_24h": "#FF7F0E",
-        "AR(24)_frozen": "#2CA02C",
-        "SARIMA_auto": "#D62728",
-        "Ridge": "#9467BD",
-        "RandomForest": "#8C564B",
-        "XGBoost": "#E377C2",
-        "LightGBM": "#17BECF",
-        "DeepAR": "#7F7F7F",
+        "Persistence": "#1B9E77",
+        "Seasonal_naive_24h": "#D95F02",
+        "AR(24)_frozen": "#7570B3",
+        "SARIMA_auto": "#E7298A",
+        "Ridge": "#66A61E",
+        "RandomForest": "#A6761D",
+        "XGBoost": "#E6AB02",
+        "LightGBM": "#1F78B4",
+        "DeepAR": "#666666",
     }
-    return {m: base.get(m, "#4C4C4C") for m in models}
+    out: dict[str, str] = {}
+    for m in models:
+        if m in base:
+            out[m] = base[m]
+        elif m.endswith("_tuned") and m.replace("_tuned", "") in base:
+            out[m] = base[m.replace("_tuned", "")]
+        else:
+            out[m] = "#4C4C4C"
+    return out
+
+
+def _base_model_color(name: str) -> str:
+    p = _model_palette([name])
+    return p.get(name, "#4C4C4C")
 
 
 def _save_figure(fig: plt.Figure, out_path: Path, *, mirror_path: Path | None = None) -> None:
@@ -71,47 +90,119 @@ def _save_figure(fig: plt.Figure, out_path: Path, *, mirror_path: Path | None = 
     plt.close(fig)
 
 
-def _plot_mae_by_horizon(df: pd.DataFrame, out_path: Path) -> None:
+def _plot_mae_by_horizon(df: pd.DataFrame, out_path: Path, *, mirror_path: Path | None = None) -> None:
     if df.empty:
         return
+    plt.style.use("default")
+    plt.rcParams.update(
+        {
+            "font.size": 10.5,
+            "axes.titlesize": 12.5,
+            "axes.labelsize": 10.5,
+            "legend.fontsize": 9,
+            "axes.facecolor": "white",
+            "figure.facecolor": "white",
+        }
+    )
     agg = df.groupby("model", as_index=False)["MAE"].mean().sort_values("MAE")
     top_models = agg["model"].head(6).tolist()
     base_models = [m for m in ("Persistence", "Seasonal_naive_24h") if m in df["model"].unique()]
     show_models = list(dict.fromkeys(base_models + top_models))
     sub_df = df[df["model"].isin(show_models)].copy()
-    palette = _model_palette(show_models)
+    cmap = plt.get_cmap("tab10")
+    palette = {m: cmap(i % 10) for i, m in enumerate(show_models)}
 
-    fig, ax = plt.subplots(figsize=(9.2, 5.2))
-    for model in show_models:
+    fig, ax = plt.subplots(figsize=(9.2, 5.5))
+    for i, model in enumerate(show_models):
         sub = sub_df[sub_df["model"] == model].sort_values("horizon_h")
         if sub.empty:
             continue
-        lw = 2.6 if model in top_models[:3] else 1.8
-        alpha = 1.0 if model in top_models[:3] else 0.9
+        lw = 3.0 if model in top_models[:3] else 2.0
         ax.plot(
             sub["horizon_h"],
             sub["MAE"],
             marker="o",
             linewidth=lw,
-            markersize=5,
+            markersize=6.5,
+            markeredgewidth=0.5,
+            markeredgecolor="white",
             label=model,
             color=palette.get(model),
-            alpha=alpha,
+            zorder=10 - i,
         )
     ax.set_xlabel("Forecast horizon (hours)")
-    ax.set_ylabel("MAE (lower is better)")
-    ax.set_title("PM2.5 Forecast Error by Horizon (Top Models + Baselines)")
-    ax.grid(alpha=0.25, linestyle="--")
+    ax.set_ylabel("MAE (µg/m³; lower is better)")
+    ax.set_title("Test MAE by horizon — direct multi-step, city-mean PM2.5 (Yerevan)")
+    ax.grid(alpha=0.3, linestyle="--", linewidth=0.7, color="#888888")
     ax.set_xticks(sorted(sub_df["horizon_h"].unique()))
-    ax.legend(loc="upper left", ncol=2, fontsize=8, framealpha=0.95)
-    fig.tight_layout()
-    _save_figure(fig, out_path)
+    leg = ax.legend(
+        loc="upper center",
+        bbox_to_anchor=(0.5, -0.18),
+        ncol=2,
+        frameon=True,
+        facecolor="white",
+        framealpha=0.98,
+        edgecolor="#b0b0b0",
+    )
+    if leg is not None:
+        leg.get_frame().set_linewidth(0.8)
+    fig.subplots_adjust(bottom=0.28)
+    _save_figure(fig, out_path, mirror_path=mirror_path)
+
+
+def _imputation_sensitivity_block(df_clean: pd.DataFrame, train_end: int, target_col: str) -> dict[str, Any]:
+    """Train-segment imputation flag rates for methodology / paper reporting."""
+    train = df_clean.iloc[:train_end]
+    flag_cols = [c for c in train.columns if c.startswith("imputation_flag_")]
+    out: dict[str, Any] = {
+        "n_train_rows": int(len(train)),
+        "imputation_flag_columns": flag_cols,
+    }
+    if not flag_cols or len(train) == 0:
+        return out
+    any_imp = np.zeros(len(train), dtype=bool)
+    for c in flag_cols:
+        s = train[c]
+        if s.dtype == object:
+            continue
+        any_imp = any_imp | (s.fillna(0).astype(int) > 0)
+    out["train_rows_any_imputation"] = int(any_imp.sum())
+    out["train_fraction_any_imputation"] = float(any_imp.mean())
+    tf = f"imputation_flag_{target_col}"
+    if tf in train.columns and target_col in train.columns:
+        s2 = train[tf].fillna(0).astype(float).to_numpy()
+        y2 = train[target_col].astype(float).to_numpy()
+        m2 = np.isfinite(y2) & np.isfinite(s2)
+        if m2.sum() > 20 and np.std(s2[m2]) > 0 and np.std(y2[m2]) > 0:
+            out["target_vs_impute_flag_correlation"] = float(np.corrcoef(y2[m2], s2[m2])[0, 1])
+    return out
+
+
+def _validation_chronological_vs_walkforward(results_1h: pd.DataFrame, wf_df: pd.DataFrame) -> pd.DataFrame:
+    if wf_df.empty or results_1h.empty:
+        return pd.DataFrame()
+    main = results_1h.set_index("Model")["MAE"]
+    wf_mean = wf_df.groupby("model")["MAE"].mean()
+    common = main.index.intersection(wf_mean.index)
+    rows: list[dict[str, Any]] = []
+    for m in common:
+        rows.append(
+            {
+                "model": m,
+                "mae_chronological_test": float(main.loc[m]),
+                "mae_walkforward_mean": float(wf_mean.loc[m]),
+                "delta_mae_wf_minus_chrono": float(wf_mean.loc[m] - main.loc[m]),
+            }
+        )
+    return pd.DataFrame(rows).sort_values("mae_chronological_test").reset_index(drop=True)
 
 
 def _plot_model_performance_1h(
     results_1h: pd.DataFrame,
     bootstrap: dict[str, dict[str, float]],
     out_path: Path,
+    *,
+    mirror_path: Path | None = None,
 ) -> None:
     if results_1h.empty:
         return
@@ -123,7 +214,7 @@ def _plot_model_performance_1h(
     xerr = np.vstack([mae - ci_low, ci_high - mae])
 
     fig, ax = plt.subplots(figsize=(9.5, 5.3))
-    colors = [_model_palette(models)[m] for m in models]
+    colors = [_base_model_color(m) for m in models]
     ypos = np.arange(len(models))
     ax.barh(ypos, mae, color=colors, alpha=0.85)
     finite_mask = np.isfinite(xerr).all(axis=0)
@@ -143,10 +234,12 @@ def _plot_model_performance_1h(
     ax.set_title("1-Hour Model Performance with 95% Bootstrap CI")
     ax.grid(axis="x", alpha=0.25, linestyle="--")
     fig.tight_layout()
-    _save_figure(fig, out_path)
+    _save_figure(fig, out_path, mirror_path=mirror_path)
 
 
-def _plot_walk_forward_stability(wf_df: pd.DataFrame, out_path: Path) -> None:
+def _plot_walk_forward_stability(
+    wf_df: pd.DataFrame, out_path: Path, *, mirror_path: Path | None = None
+) -> None:
     if wf_df.empty:
         return
     models = wf_df.groupby("model")["MAE"].mean().sort_values().index.tolist()
@@ -166,7 +259,66 @@ def _plot_walk_forward_stability(wf_df: pd.DataFrame, out_path: Path) -> None:
     ax.grid(axis="y", alpha=0.25, linestyle="--")
     ax.tick_params(axis="x", labelrotation=20)
     fig.tight_layout()
-    _save_figure(fig, out_path)
+    _save_figure(fig, out_path, mirror_path=mirror_path)
+
+
+def _plot_walk_forward_errorbars(
+    wf_df: pd.DataFrame, out_path: Path, *, mirror_path: Path | None = None
+) -> None:
+    if wf_df.empty or "model" not in wf_df.columns:
+        return
+    g = wf_df.groupby("model")["MAE"].agg(["mean", "std", "count"]).reset_index()
+    g = g.sort_values("mean")
+    models = g["model"].tolist()
+    means = g["mean"].to_numpy()
+    st = g["std"].to_numpy()
+    n = g["count"].to_numpy()
+    se = st / np.sqrt(np.maximum(1, n))
+    ypos = np.arange(len(models))
+    fig, ax = plt.subplots(figsize=(9.5, 5.2))
+    colors = [_base_model_color(m) for m in models]
+    ax.barh(ypos, means, xerr=se, color=colors, alpha=0.85, ecolor="#333333", capsize=3, height=0.7)
+    ax.set_yticks(ypos)
+    ax.set_yticklabels(models)
+    ax.invert_yaxis()
+    ax.set_xlabel("Mean MAE (± s.e. across walk-forward folds)")
+    ax.set_title("Walk-forward: mean test error with fold-to-fold uncertainty")
+    ax.grid(axis="x", alpha=0.25, linestyle="--")
+    fig.tight_layout()
+    _save_figure(fig, out_path, mirror_path=mirror_path)
+
+
+def _plot_spatial_mae_levels(
+    levels: list[dict[str, Any]],
+    out_path: Path,
+    *,
+    mirror_path: Path | None = None,
+) -> None:
+    if not levels:
+        return
+    df = pd.DataFrame(levels)
+    if df.empty or "MAE" not in df.columns:
+        return
+    models = (
+        df.groupby("Model")["MAE"]
+        .mean()
+        .sort_values()
+        .index.tolist()[:7]
+    )
+    sub = df[df["Model"].isin(models)]
+    if sub.empty:
+        return
+    pvt = sub.pivot_table(index="Model", columns="level", values="MAE", aggfunc="mean")
+    pvt = pvt.reindex(models)
+    fig, ax = plt.subplots(figsize=(8.2, 4.6))
+    pvt.plot(kind="bar", ax=ax, rot=18, width=0.78, colormap="tab20")
+    ax.set_ylabel("MAE (µg/m³)")
+    ax.set_xlabel("Model")
+    ax.set_title("MAE by spatial aggregation level (weighted where applicable)")
+    ax.grid(axis="y", alpha=0.25, linestyle="--")
+    ax.legend(title="Level", loc="best", framealpha=0.95)
+    fig.tight_layout()
+    _save_figure(fig, out_path, mirror_path=mirror_path)
 
 
 def _plot_forecast_vs_actual(
@@ -175,6 +327,8 @@ def _plot_forecast_vs_actual(
     y_pred: np.ndarray,
     model_name: str,
     out_path: Path,
+    *,
+    mirror_path: Path | None = None,
 ) -> None:
     if len(y_true) == 0 or len(y_pred) == 0:
         return
@@ -201,7 +355,7 @@ def _plot_forecast_vs_actual(
     ax2.set_xlabel("Timestamp")
     ax2.grid(alpha=0.22, linestyle="--")
     fig.tight_layout()
-    _save_figure(fig, out_path)
+    _save_figure(fig, out_path, mirror_path=mirror_path)
 
 
 def _plot_station_groups_map(
@@ -345,7 +499,12 @@ def _forecast_1h_single_series(
     one, _ = controlled_impute(one, audit_cols, cfg.data)
     one[cfg.data.target_col + "_raw"] = one[cfg.data.target_col]
 
-    df_clean, feature_cols = build_feature_table(one, cfg.data.target_col, cfg.features)
+    df_clean, feature_cols = build_feature_table(
+        one,
+        cfg.data.target_col,
+        cfg.features,
+        minimal=cfg.features.use_minimal_feature_set_for_units,
+    )
     if len(df_clean) < min_feature_rows:
         return None
 
@@ -403,6 +562,7 @@ def _weighted_mean_mae_by_model(unit_df: pd.DataFrame) -> dict[str, float]:
 def run_full_pipeline(cfg: PipelineConfig, *, enable_tuning: bool = True) -> dict[str, Any]:
     assert cfg.output is not None
     _ensure_dirs(cfg)
+    print("[pipeline] Loading station metadata and city/district series...", flush=True)
     station_meta = load_yerevan_station_metadata(cfg.data)
     district_result = build_district_mapping(station_meta)
 
@@ -433,15 +593,47 @@ def run_full_pipeline(cfg: PipelineConfig, *, enable_tuning: bool = True) -> dic
 
     audit_cols = [cfg.data.target_col] + [c for c in cfg.features.include_covariates if c in city.columns]
     missing_audit = audit_missingness(city, audit_cols)
+    city_unimputed = city.copy()
     city, imputation_meta = controlled_impute(city, audit_cols, cfg.data)
     city[cfg.data.target_col + "_raw"] = city[cfg.data.target_col]
+    imputation_sensitivity: dict[str, Any] = {}
+    if cfg.data.run_imputation_sensitivity_ablation:
+        city_alt, _ = controlled_impute(
+            city_unimputed, audit_cols, cfg.data, skip_medium_hod=True
+        )
+        city_alt[cfg.data.target_col + "_raw"] = city_alt[cfg.data.target_col]
+        try:
+            d_alt, f_alt = build_feature_table(city_alt, cfg.data.target_col, cfg.features, minimal=False)
+            if len(d_alt) > 200:
+                sp2 = chronological_split(
+                    len(d_alt), cfg.validation.train_ratio, cfg.validation.val_ratio
+                )
+                tr2, va2, te2 = (
+                    d_alt.iloc[: sp2.train_end],
+                    d_alt.iloc[sp2.train_end : sp2.val_end],
+                    d_alt.iloc[sp2.val_end :],
+                )
+                r_ab = Ridge(alpha=1.0, solver="lsqr", random_state=cfg.models.random_state)
+                r_ab.fit(tr2[f_alt], tr2["target_1h"].astype(float))
+                p_ab = r_ab.predict(va2[f_alt])
+                m_ab = regression_metrics(va2["target_1h"].to_numpy(), p_ab)
+                imputation_sensitivity["ridge_mae_val_no_hod_for_medium_gaps"] = m_ab
+        except Exception as ex:  # noqa: BLE001
+            imputation_sensitivity["ablation_error"] = str(ex)
 
-    df_clean, feature_cols = build_feature_table(city, cfg.data.target_col, cfg.features)
+    df_clean, feature_cols = build_feature_table(city, cfg.data.target_col, cfg.features, minimal=False)
     n = len(df_clean)
+    print(f"[pipeline] Model table rows={n}, {len(feature_cols)} features. Fitting baselines + SARIMA + ML...", flush=True)
     split = chronological_split(n, cfg.validation.train_ratio, cfg.validation.val_ratio)
     tr = df_clean.iloc[: split.train_end]
     va = df_clean.iloc[split.train_end : split.val_end]
     te = df_clean.iloc[split.val_end :]
+    if cfg.data.run_imputation_sensitivity_ablation and imputation_sensitivity is not None:
+        r0 = Ridge(alpha=1.0, solver="lsqr", random_state=cfg.models.random_state)
+        r0.fit(tr[feature_cols], tr["target_1h"].values.astype(float))
+        imputation_sensitivity["ridge_mae_val_with_hod_policy"] = regression_metrics(
+            va["target_1h"].to_numpy(), r0.predict(va[feature_cols])
+        )
 
     X_tr, y_tr = tr[feature_cols], tr["target_1h"].values.astype(float)
     X_va, y_va = va[feature_cols], va["target_1h"].values.astype(float)
@@ -468,8 +660,15 @@ def run_full_pipeline(cfg: PipelineConfig, *, enable_tuning: bool = True) -> dic
     seasonal_order: tuple[int, int, int, int] | None = None
     sarima = np.full_like(y_full, np.nan, dtype=float)
     if cfg.models.include_sarima:
-        order, seasonal_order = sarima_order_search(y_full[: split.train_end], seasonal_m=24)
+        print("[pipeline] SARIMA: auto order search (pmdarima; may take several minutes)...", flush=True)
+        order, seasonal_order = sarima_order_search(
+            y_full[: split.train_end],
+            seasonal_m=24,
+            information_criterion=cfg.models.sarima_criterion,
+        )
+        print(f"[pipeline] SARIMA selected order={order} seasonal={seasonal_order}. Fitting SARIMAX...", flush=True)
         sarima = sarima_rolling_one_step(y_full, split.train_end, order, seasonal_order)
+        print("[pipeline] SARIMA test-horizon predictions complete.", flush=True)
         preds_val["SARIMA_auto"] = sarima[split.train_end : split.val_end]
         preds_test["SARIMA_auto"] = sarima[split.val_end : n]
 
@@ -489,6 +688,7 @@ def run_full_pipeline(cfg: PipelineConfig, *, enable_tuning: bool = True) -> dic
 
     tuned_info: dict[str, Any] = {}
     if enable_tuning and cfg.tuning.enabled:
+        print(f"[pipeline] Hyperopt tuning ({cfg.tuning.max_evals} evals × {len(tree_model_names)} tree models)...", flush=True)
         for name in tree_model_names:
             best_params, meta = tune_hyperopt(
                 name,
@@ -564,17 +764,23 @@ def run_full_pipeline(cfg: PipelineConfig, *, enable_tuning: bool = True) -> dic
             hz_rows.append({"horizon_h": h, "model": name, **met})
     hz_df = pd.DataFrame(hz_rows)
     hz_df.to_csv(cfg.output.tables_dir / "forecast_results_by_horizon.csv", index=False)
+    print("[pipeline] Multi-horizon table done. Walk-forward validation (can be slow)...", flush=True)
 
-    # Walk-forward validation summary
-    wf_rows = []
-    if cfg.validation.walk_forward_enabled:
+    # Walk-forward: primary stability evaluation (includes SARIMA, optional per-fold DeepAR)
+    wf_rows: list[dict[str, Any]] = []
+    v = cfg.validation
+    wf_sarima_orders: list[dict[str, Any]] = []
+    if v.walk_forward_enabled:
         min_train = split.train_end
         for fold_id, (tr_sl, te_sl) in enumerate(
             walk_forward_slices(
                 n,
                 min_train_size=min_train,
-                test_size=cfg.validation.walk_forward_test_size,
-                step=cfg.validation.walk_forward_step,
+                test_size=int(v.walk_forward_test_size),
+                step=int(v.walk_forward_step),
+                mode=v.walk_forward_mode,
+                train_window=v.walk_forward_train_window,
+                max_folds=v.max_walk_forward_folds,
             ),
             start=1,
         ):
@@ -582,21 +788,77 @@ def run_full_pipeline(cfg: PipelineConfig, *, enable_tuning: bool = True) -> dic
             te_f = df_clean.iloc[te_sl]
             Xtr_f, ytr_f = tr_f[feature_cols], tr_f["target_1h"].values.astype(float)
             Xte_f, yte_f = te_f[feature_cols], te_f["target_1h"].values.astype(float)
+            train_end = int(tr_sl.stop)
             idx_f = te_f.index.to_numpy()
             wf_preds: dict[str, np.ndarray] = {
                 "Persistence": te_f[cfg.data.target_col].to_numpy(dtype=float),
                 "Seasonal_naive_24h": np.where(idx_f + 1 - 24 >= 0, y_full[idx_f + 1 - 24], np.nan),
             }
-            ar_fold = frozen_ar_one_step(y_full, tr_sl.stop, lags=24)
+            ar_fold = frozen_ar_one_step(y_full, train_end, lags=24)
             wf_preds["AR(24)_frozen"] = ar_fold[te_sl]
+            if cfg.models.include_sarima and v.walk_forward_sarima:
+                if v.walk_forward_reuse_main_sarima_orders and order is not None and seasonal_order is not None:
+                    o_f, so_f = order, seasonal_order
+                else:
+                    o_f, so_f = sarima_order_search(
+                        y_full[:train_end],
+                        seasonal_m=24,
+                        information_criterion=cfg.models.sarima_criterion,
+                    )
+                wf_sarima_orders.append(
+                    {
+                        "fold": fold_id,
+                        "order": o_f,
+                        "seasonal_order": so_f,
+                        "reused_from_main": bool(
+                            v.walk_forward_reuse_main_sarima_orders
+                            and order is not None
+                        ),
+                    }
+                )
+                s_fold = sarima_rolling_one_step(y_full, train_end, o_f, so_f)
+                wf_preds["SARIMA_auto"] = s_fold[te_sl]
             for name in ("Ridge", *tree_model_names):
                 if name == "Ridge":
                     model = Ridge(alpha=1.0, solver="lsqr", random_state=cfg.models.random_state)
+                    model.fit(Xtr_f, ytr_f)
+                    wf_preds["Ridge"] = model.predict(Xte_f)
+                    continue
+                if (
+                    v.walk_forward_refit_hyperopt
+                    and enable_tuning
+                    and cfg.tuning.enabled
+                ):
+                    m_tr = int(max(200, int(0.85 * len(Xtr_f))))
+                    Xa, ya = Xtr_f.iloc[:m_tr], ytr_f[:m_tr]
+                    Xb, yb = Xtr_f.iloc[m_tr:], ytr_f[m_tr:]
+                    if len(ya) > 100 and len(yb) > 30:
+                        bp, _ = tune_hyperopt(
+                            name,
+                            Xa,
+                            ya,
+                            Xb,
+                            yb,
+                            max_evals=max(5, min(cfg.tuning.max_evals, 20)),
+                            random_state=cfg.tuning.random_state,
+                        )
+                        model = make_tree_model(
+                            name,
+                            random_state=cfg.models.random_state,
+                            params=bp,
+                        )
+                    else:
+                        model = build_baseline_models(cfg.models.random_state)[name]
                 else:
                     model = build_baseline_models(cfg.models.random_state)[name]
                 model.fit(Xtr_f, ytr_f)
                 wf_preds[name] = model.predict(Xte_f)
-                if enable_tuning and cfg.tuning.enabled and name in tuned_info:
+                if (
+                    (not v.walk_forward_refit_hyperopt)
+                    and enable_tuning
+                    and cfg.tuning.enabled
+                    and name in tuned_info
+                ):
                     tuned_model = make_tree_model(
                         name,
                         random_state=cfg.models.random_state,
@@ -604,12 +866,56 @@ def run_full_pipeline(cfg: PipelineConfig, *, enable_tuning: bool = True) -> dic
                     )
                     tuned_model.fit(Xtr_f, ytr_f)
                     wf_preds[f"{name}_tuned"] = tuned_model.predict(Xte_f)
+            if (
+                cfg.models.include_deepar
+                and v.walk_forward_refit_deepar
+                and v.walk_forward_max_folds_deepar > 0
+                and fold_id <= int(v.walk_forward_max_folds_deepar)
+            ):
+                try:
+                    train_long = tr_f[["series_id", "timestamp", cfg.data.target_col]].rename(
+                        columns={cfg.data.target_col: "target"}
+                    )
+                    future_long = te_f[["series_id", "timestamp"]].copy()
+                    d_res = train_predict_deepar(
+                        train_long,
+                        future_long,
+                        horizon=1,
+                        backend=cfg.models.deepar_backend,
+                        max_steps=cfg.models.deepar_max_steps,
+                        input_size=cfg.models.deepar_input_size,
+                        random_seed=cfg.models.random_state,
+                    )
+                    pred_d = (
+                        d_res.predictions[["timestamp", "prediction"]]
+                        .set_index("timestamp")
+                        .reindex(te_f["timestamp"])
+                        .prediction.to_numpy(dtype=float)
+                    )
+                    wf_preds["DeepAR"] = pred_d
+                except Exception:
+                    pass
             for name, pred in wf_preds.items():
                 met = regression_metrics(yte_f, pred)
                 wf_rows.append({"fold": fold_id, "model": name, **met})
     wf_df = pd.DataFrame(wf_rows)
-    wf_df.to_csv(cfg.output.tables_dir / "walk_forward_results_1h.csv", index=False)
+    if not wf_df.empty:
+        wf_df.to_csv(cfg.output.tables_dir / "walk_forward_results_1h.csv", index=False)
+        wf_stats = (
+            wf_df.groupby("model")[["MAE", "RMSE", "R2"]]
+            .agg(["mean", "std", "min", "max", "count"])
+            .round(5)
+        )
+        wf_stats.to_csv(cfg.output.tables_dir / "walk_forward_aggregate_by_model.csv")
+    else:
+        wf_stats = pd.DataFrame()
+    if not wf_df.empty:
+        print(
+            f"[pipeline] Walk-forward: {int(wf_df['fold'].nunique())} folds, {wf_df['model'].nunique()} model series.",
+            flush=True,
+        )
 
+    print("[pipeline] Optional DeepAR + stats + figures + unit forecasts...", flush=True)
     deepar_info: dict[str, Any] = {"enabled": cfg.models.include_deepar, "status": "skipped"}
     if cfg.models.include_deepar:
         try:
@@ -622,6 +928,9 @@ def run_full_pipeline(cfg: PipelineConfig, *, enable_tuning: bool = True) -> dic
                 future_long,
                 horizon=1,
                 backend=cfg.models.deepar_backend,
+                max_steps=cfg.models.deepar_max_steps,
+                input_size=cfg.models.deepar_input_size,
+                random_seed=cfg.models.random_state,
             )
             pred = (
                 deepar_res.predictions[["timestamp", "prediction"]]
@@ -637,7 +946,23 @@ def run_full_pipeline(cfg: PipelineConfig, *, enable_tuning: bool = True) -> dic
                 "status": "ok",
                 "backend": deepar_res.backend,
                 "metrics_1h": deepar_metrics,
+                **{k: v for k, v in deepar_res.details.items() if k != "raw_columns"},
             }
+            lo_c = deepar_res.details.get("lower_90_col")
+            hi_c = deepar_res.details.get("upper_90_col")
+            dfp = deepar_res.predictions
+            if lo_c and hi_c and lo_c in dfp.columns and hi_c in dfp.columns:
+                pr = dfp.set_index("timestamp").reindex(te["timestamp"])
+                lo = pr[lo_c].to_numpy(dtype=float)
+                hi = pr[hi_c].to_numpy(dtype=float)
+                m = np.isfinite(y_te) & np.isfinite(lo) & np.isfinite(hi)
+                if m.sum() > 0:
+                    inside = (y_te[m] >= lo[m]) & (y_te[m] <= hi[m])
+                    deepar_info["interval_90_coverage"] = float(np.mean(inside))
+                    deepar_info["n_points_interval_eval"] = int(m.sum())
+                    deepar_info["winkler_90"] = winkler_score(
+                        y_te, lo, hi, alpha=0.1
+                    )
         except Exception as ex:
             deepar_info = {"enabled": True, "status": "error", "error": str(ex)}
 
@@ -658,29 +983,83 @@ def run_full_pipeline(cfg: PipelineConfig, *, enable_tuning: bool = True) -> dic
     for candidate in ("Ridge", "AR(24)_frozen"):
         if candidate in preds_test and candidate != best_model and candidate not in dm_targets:
             dm_targets.append(candidate)
+    h_dm = max(1, int(getattr(cfg.stats, "horizon_hours_for_dm", 1)))
+    hac_fix = int(cfg.stats.hac_lag) if cfg.stats.hac_lag else 0
     for target in dm_targets:
         dm_rows.append(
             {
                 "comparison": f"{best_model}_vs_{target}_MAEloss",
-                **diebold_mariano(y_te, preds_test[target], preds_test[best_model]),
+                **diebold_mariano(
+                    y_te,
+                    preds_test[target],
+                    preds_test[best_model],
+                    hac_lag=hac_fix,
+                    horizon=h_dm,
+                ),
             }
         )
     dm_df = pd.DataFrame(dm_rows)
     dm_df.to_csv(cfg.output.tables_dir / "diebold_mariano_test.csv", index=False)
 
-    bootstrap = {
-        model: bootstrap_mae_ci(y_te, pred) for model, pred in preds_test.items()
-    }
+    bootstrap: dict[str, Any] = {}
+    for model, pred in preds_test.items():
+        if not cfg.stats.block_bootstrap:
+            b = {**bootstrap_mae_ci(y_te, pred, n_boot=cfg.stats.bootstrap_n, seed=cfg.tuning.random_state), "method": "iid"}
+        else:
+            b = bootstrap_mae_ci_block(
+                y_te,
+                pred,
+                n_boot=cfg.stats.bootstrap_n,
+                seed=cfg.tuning.random_state,
+                block_len=0,
+                horizon=h_dm,
+                block_len_min=cfg.stats.block_len_min,
+                block_len_max=cfg.stats.block_len_max,
+            )
+            if not np.isfinite(b.get("ci_low", float("nan"))):
+                b = {**bootstrap_mae_ci(y_te, pred, n_boot=cfg.stats.bootstrap_n, seed=cfg.tuning.random_state), "method": "iid"}
+            else:
+                b = {**b, "method": "block_circular"}
+        if cfg.stats.iid_bootstrap_also and cfg.stats.block_bootstrap and b.get("method") == "block_circular":
+            b_i = bootstrap_mae_ci(
+                y_te, pred, n_boot=cfg.stats.bootstrap_n, seed=cfg.tuning.random_state + 1
+            )
+            b["iid_bootstrap_mae"] = b_i.get("mae", float("nan"))
+            b["iid_bootstrap_ci_low"] = b_i.get("ci_low", float("nan"))
+            b["iid_bootstrap_ci_high"] = b_i.get("ci_high", float("nan"))
+        bootstrap[model] = b
 
-    _plot_mae_by_horizon(hz_df, cfg.output.plots_dir / "mae_by_horizon.png")
-    _plot_model_performance_1h(results_1h, bootstrap, cfg.output.plots_dir / "model_performance_1h_ci.png")
-    _plot_walk_forward_stability(wf_df, cfg.output.plots_dir / "walk_forward_mae_stability.png")
+    img = cfg.output.images_dir
+    _plot_mae_by_horizon(
+        hz_df, cfg.output.plots_dir / "mae_by_horizon.png", mirror_path=img / "mae_by_horizon.png"
+    )
+    _plot_model_performance_1h(
+        results_1h,
+        bootstrap,
+        cfg.output.plots_dir / "model_performance_1h_ci.png",
+        mirror_path=img / "model_performance_1h_ci.png",
+    )
+    _plot_walk_forward_stability(
+        wf_df, cfg.output.plots_dir / "walk_forward_mae_stability.png", mirror_path=img / "walk_forward_mae_stability.png"
+    )
+    _plot_walk_forward_errorbars(
+        wf_df,
+        cfg.output.plots_dir / "walk_forward_mean_with_errorbars.png",
+        mirror_path=img / "walk_forward_mean_with_errorbars.png",
+    )
+    y_train_ser = df_clean.iloc[: split.train_end][cfg.data.target_col].to_numpy(dtype=float)
+    save_acf_pacf_plot(
+        y_train_ser,
+        cfg.output.plots_dir / "acf_pacf_train.png",
+        mirror_path=img / "acf_pacf_train.png",
+    )
     _plot_forecast_vs_actual(
         te["timestamp"],
         y_te,
         preds_test[best_model],
         best_model,
         cfg.output.plots_dir / "forecast_vs_actual_best_1h.png",
+        mirror_path=img / "forecast_vs_actual_best_1h.png",
     )
     station_group_plot_path = cfg.output.plots_dir / "station_groups_map.png"
     station_group_map_info = _plot_station_groups_map(
@@ -759,6 +1138,53 @@ def run_full_pipeline(cfg: PipelineConfig, *, enable_tuning: bool = True) -> dic
     if not station_unit_df.empty:
         station_unit_df.to_csv(station_unit_csv, index=False)
 
+    spatial_mae_rows: list[dict[str, Any]] = []
+    for _, r in results_1h.iterrows():
+        spatial_mae_rows.append(
+            {
+                "Model": str(r["Model"]),
+                "level": "city_chronological_test",
+                "MAE": float(r["MAE"]),
+            }
+        )
+    wd = _weighted_mean_mae_by_model(district_unit_df)
+    ws = _weighted_mean_mae_by_model(station_unit_df)
+    for m, v in wd.items():
+        spatial_mae_rows.append({"Model": m, "level": "district_units_weighted", "MAE": v})
+    for m, v in ws.items():
+        spatial_mae_rows.append({"Model": m, "level": "station_sample_weighted", "MAE": v})
+    spatial_mae_df = pd.DataFrame(spatial_mae_rows)
+    if not spatial_mae_df.empty:
+        spatial_mae_df.to_csv(cfg.output.tables_dir / "spatial_mae_by_level.csv", index=False)
+        _plot_spatial_mae_levels(
+            spatial_mae_rows,
+            cfg.output.plots_dir / "spatial_level_comparison_mae.png",
+            mirror_path=img / "spatial_level_comparison_mae.png",
+        )
+
+    val_comp_df = _validation_chronological_vs_walkforward(results_1h, wf_df)
+    val_comp_path = cfg.output.tables_dir / "validation_chronological_vs_walkforward_1h.csv"
+    if not val_comp_df.empty:
+        val_comp_df.to_csv(val_comp_path, index=False)
+    imputation_sens = _imputation_sensitivity_block(df_clean, split.train_end, cfg.data.target_col)
+    imputation_sens = {**imputation_sens, **imputation_sensitivity}
+    if enable_tuning and cfg.tuning.enabled and "XGBoost" in tuned_info:
+        try:
+            xm = make_tree_model(
+                "XGBoost",
+                random_state=cfg.models.random_state,
+                params=tuned_info["XGBoost"]["best_params"],
+            )
+            xm.fit(X_tr, y_tr)
+            save_permutation_importance_csv(
+                X_te,
+                y_te,
+                xm,
+                cfg.output.tables_dir / "permutation_importance_xgboost_tuned.csv",
+            )
+        except Exception:
+            pass
+
     split_info = {
         "train": {
             "timestamp_min": tr["timestamp"].min().isoformat(),
@@ -786,10 +1212,28 @@ def run_full_pipeline(cfg: PipelineConfig, *, enable_tuning: bool = True) -> dic
         "sarima_orders": {"enabled": cfg.models.include_sarima, "order": order, "seasonal_order": seasonal_order},
         "missingness_audit": missing_audit,
         "imputation_summary": imputation_meta,
+        "imputation_sensitivity": imputation_sens,
+        "validation_chronological_vs_walkforward": (
+            {
+                "csv": "tables/validation_chronological_vs_walkforward_1h.csv",
+                "n_models_compared": int(len(val_comp_df)),
+                "rows": val_comp_df.to_dict(orient="records") if not val_comp_df.empty else [],
+            }
+        ),
         "walk_forward_available_folds": int(wf_df["fold"].nunique()) if not wf_df.empty else 0,
+        "walk_forward_sarima_orders_by_fold": wf_sarima_orders,
         "walk_forward_mean_mae_by_model": (
             wf_df.groupby("model")["MAE"].mean().sort_values().to_dict() if not wf_df.empty else {}
         ),
+        "walk_forward_mae_std_by_model": (
+            wf_df.groupby("model")["MAE"].std().to_dict() if not wf_df.empty else {}
+        ),
+        "config_snapshot": {
+            "sarima_criterion": cfg.models.sarima_criterion,
+            "block_bootstrap": cfg.stats.block_bootstrap,
+            "walk_forward_mode": cfg.validation.walk_forward_mode,
+            "max_walk_forward_folds": cfg.validation.max_walk_forward_folds,
+        },
         "bootstrap_mae_95ci": bootstrap,
         "diebold_mariano": dm_df.to_dict(orient="records"),
         "tuned_models": tuned_info,
@@ -824,7 +1268,7 @@ def run_full_pipeline(cfg: PipelineConfig, *, enable_tuning: bool = True) -> dic
             "district_level_mode": data_source,
             "tree_models_enabled": tree_model_names,
             "lightgbm_available": "LightGBM" in tree_model_names,
-            "outputs_layout": "All figures under results/plots/; all tabular CSVs under results/tables/; JSON under results/json/.",
+            "outputs_layout": "All figures under results/plots/ (mirrored to top-level images/ for papers); all tabular CSVs under results/tables/; JSON under results/json/.",
             "city_forecast_primary_csv": "tables/forecast_results_1h.csv",
             "district_unit_forecast_csv": "tables/forecast_results_district_units_1h.csv",
             "station_unit_forecast_csv": "tables/forecast_results_station_units_1h.csv",

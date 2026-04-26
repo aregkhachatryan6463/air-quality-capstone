@@ -63,33 +63,44 @@ def frozen_ar_h_step_from_origins(
     return out
 
 
-def sarima_order_search(y_train: np.ndarray, seasonal_m: int = 24) -> tuple[tuple[int, int, int], tuple[int, int, int, int]]:
+def sarima_order_search(
+    y_train: np.ndarray,
+    seasonal_m: int = 24,
+    *,
+    information_criterion: str = "aic",
+) -> tuple[tuple[int, int, int], tuple[int, int, int, int]]:
     import pmdarima as pm
 
     y = np.asarray(y_train, dtype=float)
     y = y[np.isfinite(y)]
     if len(y) < 200:
         return (1, 0, 1), (1, 0, 1, seasonal_m)
-    if len(y) > 12_000:
-        y = y[-12_000:]
+    # Truncate for order search (short window keeps Kalman memory low on small-RAM machines).
+    if len(y) > 1_500:
+        y = y[-1_500:]
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        model = pm.auto_arima(
-            y,
-            seasonal=True,
-            m=seasonal_m,
-            suppress_warnings=True,
-            error_action="ignore",
-            stepwise=True,
-            max_p=3,
-            max_q=3,
-            max_P=2,
-            max_Q=2,
-            max_order=12,
-            information_criterion="aic",
-            approximation=True,
-        )
-    return tuple(model.order), tuple(model.seasonal_order)
+        try:
+            model = pm.auto_arima(
+                y,
+                seasonal=True,
+                m=seasonal_m,
+                suppress_warnings=True,
+                error_action="ignore",
+                stepwise=True,
+                max_p=2,
+                max_q=2,
+                max_d=1,
+                max_P=1,
+                max_D=1,
+                max_Q=1,
+                max_order=8,
+                information_criterion=information_criterion,
+                approximation=True,
+            )
+            return tuple(model.order), tuple(model.seasonal_order)
+        except Exception:
+            return (1, 0, 1), (1, 0, 1, seasonal_m)
 
 
 def sarima_rolling_one_step(
@@ -105,27 +116,37 @@ def sarima_rolling_one_step(
     train = arr[:train_end]
     if len(train) < 50:
         return pred
-    model = SARIMAX(
-        train,
-        order=order,
-        seasonal_order=seasonal_order,
-        trend="c",
-        enforce_stationarity=False,
-        enforce_invertibility=False,
-    )
-    res_t = model.fit(disp=False)
+    try:
+        model = SARIMAX(
+            train,
+            order=order,
+            seasonal_order=seasonal_order,
+            trend="c",
+            enforce_stationarity=False,
+            enforce_invertibility=False,
+            low_memory=True,
+        )
+        res_t = model.fit(disp=False, maxiter=120, low_memory=True)
+    except Exception:
+        return pred
     future_obs = arr[train_end:]
     if future_obs.size == 0:
-        fc = res_t.get_forecast(steps=1)
-        pred[-1] = float(np.asarray(fc.predicted_mean).ravel()[0])
+        try:
+            fc = res_t.get_forecast(steps=1)
+            pred[-1] = float(np.asarray(fc.predicted_mean).ravel()[0])
+        except Exception:
+            pass
         return pred
 
     # Fast path: append all observed future points once, then pull one-step predictions.
-    res_full = res_t.append(future_obs, refit=False)
-    p = np.asarray(
-        res_full.get_prediction(start=train_end, end=len(arr) - 1, dynamic=False).predicted_mean
-    ).ravel()
-    pred[train_end - 1 : len(arr) - 1] = p
-    pred[-1] = float(np.asarray(res_full.get_forecast(steps=1).predicted_mean).ravel()[0])
+    try:
+        res_full = res_t.append(future_obs, refit=False)
+        p = np.asarray(
+            res_full.get_prediction(start=train_end, end=len(arr) - 1, dynamic=False).predicted_mean
+        ).ravel()
+        pred[train_end - 1 : len(arr) - 1] = p
+        pred[-1] = float(np.asarray(res_full.get_forecast(steps=1).predicted_mean).ravel()[0])
+    except Exception:
+        return pred
     return pred
 
