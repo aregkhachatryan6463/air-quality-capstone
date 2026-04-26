@@ -44,9 +44,13 @@ yerevan_pm25_data_overview.py
 yerevan_pm25_forecasting.py
 
 # Generated pipeline outputs: tracked under results/{plots,tables,json} for a clean layout.
-# Ignore stray re-generated files at results/ root (canonical paths use subfolders).
-results/*.csv
-results/split_info.json
+# Keep repository lean: generated outputs stay local by default.
+results/**
+!results/README.md
+# Optional local thesis image mirrors generated from results/plots
+images/*.png
+# Generated export summary
+paper/results_summary.json
 # Local debug logs
 debug-*.log
 figures_data_quality/

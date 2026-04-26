@@ -1,3 +1,0 @@
-comparison,DM,p_value_two_sided,n,hac_lag
-AR(24)_frozen_vs_SARIMA_auto_MAEloss,3.55140698689089,0.00038317740064441885,9178.0,25.0
-AR(24)_frozen_vs_Ridge_MAEloss,17.379206688395954,0.0,9178.0,25.0

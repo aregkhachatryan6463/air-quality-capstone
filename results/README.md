@@ -1,7 +1,7 @@
 # Pipeline outputs (layout)
 
 `run_pipeline.py` writes all generated artifacts in three places under this folder.  
-`plots/`, `tables/`, and `json/` are the only canonical locations: avoid saving CSVs or figures directly under `results/` (root-level outputs are gitignored to prevent clutter). This README documents the **intended structure** for a clean repository and reports.
+`plots/`, `tables/`, and `json/` are canonical local output locations. To keep GitHub clean, generated files under `results/` are gitignored by default (this README remains tracked).
 
 | Subfolder | Contents |
 |-----------|----------|
