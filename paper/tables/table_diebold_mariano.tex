@@ -1,14 +1,14 @@
 \begin{table}[t]
 \centering
 \small
-\caption{Diebold--Mariano tests on test-set absolute errors (paired; HAC lag 1).}
+\caption{Diebold--Mariano tests on test-set absolute errors (paired; Newey--West--style HAC; lag rule in results JSON).}
 \label{tab:dm}
-\begin{tabular}{lrrr}
+\begin{tabular}{lrrrr}
 \toprule
-comparison & DM & p\_value\_two\_sided & n \\
+comparison & DM & p\_value\_two\_sided & n & hac\_lag \\
 \midrule
-AR(24)\_frozen\_vs\_Persistence\_MAEloss & 14.296609 & 0.000000 & 9192 \\
-AR(24)\_frozen\_vs\_Ridge\_MAEloss & 44.071954 & 0.000000 & 9192 \\
+AR(24)\_frozen\_vs\_Persistence\_MAEloss & 8.742993 & 0.000000 & 9178 & 25.000000 \\
+AR(24)\_frozen\_vs\_Ridge\_MAEloss & 17.379207 & 0.000000 & 9178 & 25.000000 \\
 \bottomrule
 \end{tabular}
 \end{table}

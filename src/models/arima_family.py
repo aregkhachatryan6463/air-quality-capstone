@@ -75,9 +75,9 @@ def sarima_order_search(
     y = y[np.isfinite(y)]
     if len(y) < 200:
         return (1, 0, 1), (1, 0, 1, seasonal_m)
-    # Truncate for order search (short window keeps Kalman memory low on small-RAM machines).
-    if len(y) > 1_500:
-        y = y[-1_500:]
+    # Truncate for order search (short window keeps stepwise search tractable).
+    if len(y) > 900:
+        y = y[-900:]
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         try:
@@ -103,6 +103,14 @@ def sarima_order_search(
             return (1, 0, 1), (1, 0, 1, seasonal_m)
 
 
+def sarima_orders_main_run() -> tuple[tuple[int, int, int], tuple[int, int, int, int]]:
+    """
+    Fixed SARIMA structure used for the capstone replication run.
+    Matches IC-based stepwise search on hourly Yerevan PM2.5 without re-running pmdarima each pipeline call.
+    """
+    return (2, 1, 2), (1, 0, 0, 24)
+
+
 def sarima_rolling_one_step(
     y: np.ndarray,
     train_end: int,
@@ -116,6 +124,12 @@ def sarima_rolling_one_step(
     train = arr[:train_end]
     if len(train) < 50:
         return pred
+    # Very long hourly trains make a single SARIMAX state-space fit prohibitively slow; use a
+    # trailing window that still spans multiple seasons (20000 h ~ 833 days).
+    n_fit_max = 20000
+    if len(train) > n_fit_max:
+        train = train[-n_fit_max:]
+    n_fit = len(train)
     try:
         model = SARIMAX(
             train,
@@ -126,7 +140,8 @@ def sarima_rolling_one_step(
             enforce_invertibility=False,
             low_memory=True,
         )
-        res_t = model.fit(disp=False, maxiter=120, low_memory=True)
+        # Cap iterations: full-hourly long trains can otherwise stall the state-space fit.
+        res_t = model.fit(disp=False, maxiter=80, low_memory=True)
     except Exception:
         return pred
     future_obs = arr[train_end:]
@@ -139,13 +154,14 @@ def sarima_rolling_one_step(
         return pred
 
     # Fast path: append all observed future points once, then pull one-step predictions.
+    # Indices are relative to the *fitted* sample (length n_fit) plus append; not global `train_end`.
     try:
         res_full = res_t.append(future_obs, refit=False)
+        end_idx = n_fit + len(future_obs) - 1
         p = np.asarray(
-            res_full.get_prediction(start=train_end, end=len(arr) - 1, dynamic=False).predicted_mean
+            res_full.get_prediction(start=n_fit, end=end_idx, dynamic=False).predicted_mean
         ).ravel()
-        pred[train_end - 1 : len(arr) - 1] = p
-        pred[-1] = float(np.asarray(res_full.get_forecast(steps=1).predicted_mean).ravel()[0])
+        pred[train_end : train_end + len(future_obs)] = p
     except Exception:
         return pred
     return pred

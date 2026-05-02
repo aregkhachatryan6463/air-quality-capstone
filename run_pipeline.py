@@ -17,6 +17,12 @@ def main() -> None:
     parser.add_argument("--disable-deepar", action="store_true", help="Disable DeepAR training/evaluation")
     parser.add_argument("--disable-sarima", action="store_true", help="Disable SARIMA benchmark")
     parser.add_argument("--disable-walk-forward", action="store_true", help="Disable walk-forward validation")
+    parser.add_argument(
+        "--horizons",
+        type=str,
+        default=None,
+        help="Comma-separated forecast horizons in hours (example: 1,2,3,4,6,12,24)",
+    )
     parser.add_argument("--disable-district-grouping", action="store_true", help="Force city aggregate source (no district grouping)")
     parser.add_argument("--no-district-unit-forecasts", action="store_true", help="Skip per-administrative-district 1h forecasts")
     parser.add_argument("--no-station-unit-forecasts", action="store_true", help="Skip per-station 1h forecasts")
@@ -50,6 +56,19 @@ def main() -> None:
         cfg.models.include_sarima = False
     if args.disable_walk_forward:
         cfg.validation.walk_forward_enabled = False
+    if args.horizons:
+        parsed = []
+        for x in args.horizons.split(","):
+            x = x.strip()
+            if not x:
+                continue
+            h = int(x)
+            if h <= 0:
+                raise ValueError(f"Invalid horizon '{x}'. Horizons must be positive integers.")
+            parsed.append(h)
+        if not parsed:
+            raise ValueError("No valid horizons were provided to --horizons.")
+        cfg.features.horizons = tuple(sorted(set(parsed)))
     if args.disable_district_grouping:
         cfg.data.prefer_district_grouping = False
     if args.no_district_unit_forecasts:

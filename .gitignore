@@ -32,7 +32,7 @@ manuscript/*.out
 manuscript/*.blg
 manuscript/*.bbl
 manuscript/*.synctex.gz
-manuscript/main.pdf
+# manuscript/main.pdf — tracked for capstone submission (rebuild with pdflatex in manuscript/)
 
 # Personal/reference files not needed in repo
 Project Proposal v3.pdf

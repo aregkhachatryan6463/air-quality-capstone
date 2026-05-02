@@ -1,18 +1,26 @@
 \begin{table}[t]
 \centering
 \small
-\caption{Bootstrap 95\% intervals for mean absolute error (test set; i.i.d. resampling of hours).}
+\caption{Bootstrap 95\% intervals for mean absolute error (test set; primary: circular block; see JSON for method).}
 \label{tab:bootstrap_mae}
 \begin{tabular}{lrr}
 \toprule
 Model & MAE & 95pct\_CI\_bootstrap \\
 \midrule
-AR(24)\_frozen & 2.412 & [2.338, 2.491] \\
-Persistence & 2.747 & [2.664, 2.830] \\
-XGBoost & 4.833 & [4.722, 4.944] \\
-Ridge & 4.994 & [4.882, 5.108] \\
-RandomForest & 4.996 & [4.886, 5.102] \\
-Seasonal\_naive\_24h & 9.253 & [8.980, 9.554] \\
+AR(24)\_frozen & 2.412 & [2.176, 2.656] \\
+Persistence & 2.749 & [2.482, 3.025] \\
+Ensemble\_invMAE\_top3 & 2.854 & [2.558, 3.168] \\
+Ensemble\_avg\_top3 & 2.934 & [2.629, 3.258] \\
+LightGBM\_tuned & 3.629 & [3.272, 4.004] \\
+XGBoost\_tuned & 3.710 & [3.287, 4.162] \\
+LightGBM & 3.743 & [3.416, 4.096] \\
+RandomForest\_tuned & 3.995 & [3.665, 4.355] \\
+XGBoost & 4.011 & [3.649, 4.391] \\
+SARIMA\_auto & 4.361 & [3.927, 4.803] \\
+RandomForest & 4.410 & [4.074, 4.769] \\
+Ridge & 4.662 & [4.187, 5.141] \\
+Seasonal\_naive\_24h & 9.250 & [8.100, 10.538] \\
+DeepAR & 26.313 & [23.338, 29.403] \\
 \bottomrule
 \end{tabular}
 \end{table}

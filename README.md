@@ -32,6 +32,8 @@ The project is now runnable from one main script:
 python run_pipeline.py
 ```
 
+**Capstone replication freeze (tables in the manuscript):** after editing data or code, run `python run_pipeline.py --skip-download --max-evals 10` (or raise `--max-evals` toward 80 for a heavier tuning budget), then `python export_paper_assets.py`, then rebuild the PDF from `manuscript/`.
+
 Fast smoke test:
 
 ```bash

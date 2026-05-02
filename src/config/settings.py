@@ -28,7 +28,8 @@ class DataConfig:
 class FeatureConfig:
     # Past-only lags for target and rolling alignment (in hours)
     lag_hours: Sequence[int] = (1, 2, 3, 6, 12, 24, 48, 72)
-    horizons: Sequence[int] = (1, 2, 3, 4)
+    # Default sweep includes medium/long horizons requested by supervisor feedback.
+    horizons: Sequence[int] = (1, 2, 3, 4, 6, 12, 24)
     include_covariates: Sequence[str] = (
         "avg_pm10",
         "avg_temperature",

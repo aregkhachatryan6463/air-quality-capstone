@@ -7,12 +7,20 @@
 \toprule
 Model & MAE & RMSE & R2 \\
 \midrule
-AR(24)\_frozen & 2.4119 & 4.3880 & 0.9815 \\
-Persistence & 2.7474 & 4.9238 & 0.9767 \\
-XGBoost & 4.8334 & 7.3781 & 0.9478 \\
-Ridge & 4.9936 & 7.6027 & 0.9446 \\
-RandomForest & 4.9957 & 7.3911 & 0.9476 \\
-Seasonal\_naive\_24h & 9.2528 & 16.9252 & 0.7253 \\
+AR(24)\_frozen & 2.4124 & 4.3896 & 0.9815 \\
+Persistence & 2.7492 & 4.9268 & 0.9767 \\
+Ensemble\_invMAE\_top3 & 2.8545 & 5.2370 & 0.9736 \\
+Ensemble\_avg\_top3 & 2.9343 & 5.3743 & 0.9723 \\
+LightGBM\_tuned & 3.6292 & 6.3629 & 0.9612 \\
+XGBoost\_tuned & 3.7102 & 6.9535 & 0.9536 \\
+LightGBM & 3.7433 & 6.2791 & 0.9622 \\
+RandomForest\_tuned & 3.9953 & 6.5561 & 0.9588 \\
+XGBoost & 4.0110 & 6.6628 & 0.9574 \\
+SARIMA\_auto & 4.3611 & 7.6648 & 0.9436 \\
+RandomForest & 4.4099 & 6.9005 & 0.9543 \\
+Ridge & 4.6619 & 8.2145 & 0.9353 \\
+Seasonal\_naive\_24h & 9.2501 & 16.9324 & 0.7250 \\
+DeepAR & 26.3132 & 41.6483 & -0.6639 \\
 \bottomrule
 \end{tabular}
 \end{table}

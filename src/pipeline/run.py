@@ -5,6 +5,9 @@ from dataclasses import asdict
 from pathlib import Path
 from typing import Any
 
+import matplotlib
+
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -25,6 +28,7 @@ from src.models.arima_family import (
     frozen_ar_h_step_from_origins,
     frozen_ar_one_step,
     sarima_order_search,
+    sarima_orders_main_run,
     sarima_rolling_one_step,
 )
 from src.models.clustering import YEREVAN_DISTRICT_ORDER, build_district_mapping
@@ -64,6 +68,8 @@ def _model_palette(models: list[str]) -> dict[str, str]:
         "XGBoost": "#E6AB02",
         "LightGBM": "#1F78B4",
         "DeepAR": "#666666",
+        "Ensemble_avg_top3": "#8C564B",
+        "Ensemble_invMAE_top3": "#17BECF",
     }
     out: dict[str, str] = {}
     for m in models:
@@ -559,6 +565,84 @@ def _weighted_mean_mae_by_model(unit_df: pd.DataFrame) -> dict[str, float]:
     return dict(sorted(out.items(), key=lambda kv: kv[1]))
 
 
+def _ensemble_candidates(pred_map: dict[str, np.ndarray]) -> list[str]:
+    blocked = {"Persistence", "Seasonal_naive_24h"}
+    return [k for k in pred_map.keys() if k not in blocked]
+
+
+def _build_ensembles_from_val_test(
+    y_val: np.ndarray,
+    val_pred_map: dict[str, np.ndarray],
+    test_pred_map: dict[str, np.ndarray],
+) -> dict[str, np.ndarray]:
+    cand = [m for m in _ensemble_candidates(val_pred_map) if m in test_pred_map]
+    if len(cand) < 2:
+        return {}
+    scored: list[tuple[str, float]] = []
+    for m in cand:
+        mae = regression_metrics(y_val, val_pred_map[m])["MAE"]
+        if np.isfinite(mae):
+            scored.append((m, float(mae)))
+    if len(scored) < 2:
+        return {}
+    scored.sort(key=lambda x: x[1])
+    top = [m for m, _ in scored[: min(3, len(scored))]]
+    ens: dict[str, np.ndarray] = {}
+    ens["Ensemble_avg_top3"] = np.nanmean(
+        np.column_stack([test_pred_map[m] for m in top]), axis=1
+    )
+    maes = np.array([v for _, v in scored[: min(3, len(scored))]], dtype=float)
+    inv = 1.0 / np.maximum(maes, 1e-6)
+    w = inv / inv.sum()
+    ens["Ensemble_invMAE_top3"] = np.sum(
+        np.column_stack([test_pred_map[m] for m in top]) * w.reshape(1, -1), axis=1
+    )
+    return ens
+
+
+def _arima_family_horizon_summary(
+    hz_df: pd.DataFrame,
+    *,
+    ar_name: str = "AR(24)_frozen",
+    sarima_name: str = "SARIMA_auto",
+) -> dict[str, Any]:
+    out: dict[str, Any] = {"available": False}
+    if hz_df.empty:
+        return out
+    out["available"] = True
+    out["horizons"] = sorted(hz_df["horizon_h"].dropna().unique().tolist())
+    ar = hz_df.loc[hz_df["model"] == ar_name, ["horizon_h", "MAE"]].copy()
+    sar = hz_df.loc[hz_df["model"] == sarima_name, ["horizon_h", "MAE"]].copy()
+    if not ar.empty:
+        ar = ar.sort_values("horizon_h")
+        out["ar_mae_by_horizon"] = {
+            str(int(r["horizon_h"])): float(r["MAE"]) for _, r in ar.iterrows()
+        }
+        if len(ar) >= 2:
+            out["ar_mae_growth_last_minus_first"] = float(
+                ar["MAE"].iloc[-1] - ar["MAE"].iloc[0]
+            )
+    if not sar.empty:
+        sar = sar.sort_values("horizon_h")
+        out["sarima_mae_by_horizon"] = {
+            str(int(r["horizon_h"])): float(r["MAE"]) for _, r in sar.iterrows()
+        }
+        if len(sar) >= 2:
+            out["sarima_mae_growth_last_minus_first"] = float(
+                sar["MAE"].iloc[-1] - sar["MAE"].iloc[0]
+            )
+    if not ar.empty and not sar.empty:
+        m = ar.merge(sar, on="horizon_h", suffixes=("_ar", "_sarima"))
+        if not m.empty:
+            out["ar_minus_sarima_mae_by_horizon"] = {
+                str(int(r["horizon_h"])): float(r["MAE_ar"] - r["MAE_sarima"])
+                for _, r in m.iterrows()
+            }
+            out["ar_beats_sarima_horizon_count"] = int((m["MAE_ar"] < m["MAE_sarima"]).sum())
+            out["sarima_beats_ar_horizon_count"] = int((m["MAE_sarima"] < m["MAE_ar"]).sum())
+    return out
+
+
 def run_full_pipeline(cfg: PipelineConfig, *, enable_tuning: bool = True) -> dict[str, Any]:
     assert cfg.output is not None
     _ensure_dirs(cfg)
@@ -660,13 +744,12 @@ def run_full_pipeline(cfg: PipelineConfig, *, enable_tuning: bool = True) -> dic
     seasonal_order: tuple[int, int, int, int] | None = None
     sarima = np.full_like(y_full, np.nan, dtype=float)
     if cfg.models.include_sarima:
-        print("[pipeline] SARIMA: auto order search (pmdarima; may take several minutes)...", flush=True)
-        order, seasonal_order = sarima_order_search(
-            y_full[: split.train_end],
-            seasonal_m=24,
-            information_criterion=cfg.models.sarima_criterion,
+        # Fixed structure from prior IC search on this dataset (avoids minutes-long pmdarima stepwise on CI/laptops).
+        order, seasonal_order = sarima_orders_main_run()
+        print(
+            f"[pipeline] SARIMA orders (fixed replication): order={order} seasonal={seasonal_order}. Fitting SARIMAX...",
+            flush=True,
         )
-        print(f"[pipeline] SARIMA selected order={order} seasonal={seasonal_order}. Fitting SARIMAX...", flush=True)
         sarima = sarima_rolling_one_step(y_full, split.train_end, order, seasonal_order)
         print("[pipeline] SARIMA test-horizon predictions complete.", flush=True)
         preds_val["SARIMA_auto"] = sarima[split.train_end : split.val_end]
@@ -710,6 +793,9 @@ def run_full_pipeline(cfg: PipelineConfig, *, enable_tuning: bool = True) -> dic
             preds_val[f"{name}_tuned"] = tuned_model.predict(X_va)
             preds_test[f"{name}_tuned"] = tuned_model.predict(X_te)
 
+    ens_1h = _build_ensembles_from_val_test(y_va, preds_val, preds_test)
+    preds_test.update(ens_1h)
+
     # Main results
     rows = []
     for name, pred in preds_test.items():
@@ -723,20 +809,29 @@ def run_full_pipeline(cfg: PipelineConfig, *, enable_tuning: bool = True) -> dic
     for h in cfg.features.horizons:
         target_h = f"target_{h}h"
         tr_h = df_clean.iloc[: split.train_end].dropna(subset=feature_cols + [target_h])
+        va_h = df_clean.iloc[split.train_end : split.val_end].dropna(subset=feature_cols + [target_h])
         te_h = df_clean.iloc[split.val_end :].dropna(subset=feature_cols + [target_h])
-        if len(tr_h) < 100 or len(te_h) < 50:
+        if len(tr_h) < 100 or len(va_h) < 30 or len(te_h) < 50:
             continue
         Xtr_h, ytr_h = tr_h[feature_cols], tr_h[target_h].values.astype(float)
+        Xva_h, yva_h = va_h[feature_cols], va_h[target_h].values.astype(float)
         Xte_h, yte_h = te_h[feature_cols], te_h[target_h].values.astype(float)
         idx = te_h.index.to_numpy()
+        idx_va_h = va_h.index.to_numpy()
         pred_map = {
             "Persistence": te_h[cfg.data.target_col].values.astype(float),
             "Seasonal_naive_24h": np.where(idx + h - 24 >= 0, y_full[idx + h - 24], np.nan),
         }
+        val_pred_map = {
+            "Persistence": va_h[cfg.data.target_col].values.astype(float),
+            "Seasonal_naive_24h": np.where(idx_va_h + h - 24 >= 0, y_full[idx_va_h + h - 24], np.nan),
+        }
         if h == 1:
             pred_map["AR(24)_frozen"] = ar_series[idx]
+            val_pred_map["AR(24)_frozen"] = ar_series[idx_va_h]
             if cfg.models.include_sarima:
                 pred_map["SARIMA_auto"] = sarima[idx]
+                val_pred_map["SARIMA_auto"] = sarima[idx_va_h]
         else:
             pred_map["AR(24)_frozen"] = frozen_ar_h_step_from_origins(
                 y_full,
@@ -745,12 +840,21 @@ def run_full_pipeline(cfg: PipelineConfig, *, enable_tuning: bool = True) -> dic
                 h=h,
                 lags=24,
             )
+            val_pred_map["AR(24)_frozen"] = frozen_ar_h_step_from_origins(
+                y_full,
+                split.train_end,
+                idx_va_h,
+                h=h,
+                lags=24,
+            )
         r = Ridge(alpha=1.0, solver="lsqr", random_state=cfg.models.random_state).fit(Xtr_h, ytr_h)
         pred_map["Ridge"] = r.predict(Xte_h)
+        val_pred_map["Ridge"] = r.predict(Xva_h)
         for name in tree_model_names:
             model = build_baseline_models(cfg.models.random_state)[name]
             model.fit(Xtr_h, ytr_h)
             pred_map[name] = model.predict(Xte_h)
+            val_pred_map[name] = model.predict(Xva_h)
             if enable_tuning and cfg.tuning.enabled and name in tuned_info:
                 tuned_model = make_tree_model(
                     name,
@@ -759,11 +863,27 @@ def run_full_pipeline(cfg: PipelineConfig, *, enable_tuning: bool = True) -> dic
                 )
                 tuned_model.fit(Xtr_h, ytr_h)
                 pred_map[f"{name}_tuned"] = tuned_model.predict(Xte_h)
+                val_pred_map[f"{name}_tuned"] = tuned_model.predict(Xva_h)
+        pred_map.update(_build_ensembles_from_val_test(yva_h, val_pred_map, pred_map))
         for name, pred in pred_map.items():
             met = regression_metrics(yte_h, pred)
             hz_rows.append({"horizon_h": h, "model": name, **met})
     hz_df = pd.DataFrame(hz_rows)
     hz_df.to_csv(cfg.output.tables_dir / "forecast_results_by_horizon.csv", index=False)
+    arima_hz = _arima_family_horizon_summary(hz_df)
+    if arima_hz.get("available"):
+        ar_rows: list[dict[str, Any]] = []
+        for h in arima_hz.get("horizons", []):
+            h_str = str(int(h))
+            ar_rows.append(
+                {
+                    "horizon_h": int(h),
+                    "AR(24)_frozen_MAE": arima_hz.get("ar_mae_by_horizon", {}).get(h_str, np.nan),
+                    "SARIMA_auto_MAE": arima_hz.get("sarima_mae_by_horizon", {}).get(h_str, np.nan),
+                    "AR_minus_SARIMA_MAE": arima_hz.get("ar_minus_sarima_mae_by_horizon", {}).get(h_str, np.nan),
+                }
+            )
+        pd.DataFrame(ar_rows).to_csv(cfg.output.tables_dir / "arima_family_horizon_analysis.csv", index=False)
     print("[pipeline] Multi-horizon table done. Walk-forward validation (can be slow)...", flush=True)
 
     # Walk-forward: primary stability evaluation (includes SARIMA, optional per-fold DeepAR)
@@ -1235,6 +1355,7 @@ def run_full_pipeline(cfg: PipelineConfig, *, enable_tuning: bool = True) -> dic
             "max_walk_forward_folds": cfg.validation.max_walk_forward_folds,
         },
         "bootstrap_mae_95ci": bootstrap,
+        "arima_family_horizon_analysis": arima_hz,
         "diebold_mariano": dm_df.to_dict(orient="records"),
         "tuned_models": tuned_info,
         "district_clustering": {
